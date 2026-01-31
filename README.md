@@ -81,6 +81,8 @@ graph LR;
 - มีการระบุบุคคลที่จัดการงานต่างๆอย่างชัดเจน
 - รองรับการแสดงผลข้อมูลภาพรวมต่างๆ
 
+# 7. Link 
+url: https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
 
 # สมาชิก
 นายธนพล ประดิษฐ์ศิลป์ดี 6510685065 <br>
