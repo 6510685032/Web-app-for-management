@@ -82,8 +82,8 @@ graph LR;
 - รองรับการแสดงผลข้อมูลภาพรวมต่างๆ
 
 # 8. Link 
-figma url : https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
-Canva url : https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
+url : https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
+url : https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 
 # สมาชิก
 นายธนพล ประดิษฐ์ศิลป์ดี 6510685065 <br>
