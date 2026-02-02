@@ -93,4 +93,5 @@ url : https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 นายอติชาต เพ็ญวงษ 6610685015 <br>
 นายกฤติน ด่านซ้าย 6610685031 <br>
 
-
+# วันที่พรีเซ้น
+ครั้งที่ 1: 2 ก.พ. 2569
