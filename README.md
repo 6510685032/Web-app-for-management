@@ -86,6 +86,7 @@ https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Pl
 https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 
 # 9. How to use
+```
 ## First terminal
 cd cn332-project-djmp/backend/
 python -m venv .venv
@@ -102,6 +103,7 @@ python manage.py runserver
 cd cn332-project-djmp/frontend/
 npm install
 npm run dev
+```
 
 # สมาชิก
 นายธนพล ประดิษฐ์ศิลป์ดี 6510685065 <br>
