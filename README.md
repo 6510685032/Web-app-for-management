@@ -82,9 +82,26 @@ graph LR;
 - รองรับการแสดงผลข้อมูลภาพรวมต่างๆ
 
 # 8. Link 
-url : https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
+https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
+https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 
-url : https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
+# 9. How to use
+## First terminal
+cd cn332-project-djmp/backend/
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver
+## Second terminal
+cd cn332-project-djmp/frontend/
+npm install
+npm run dev
 
 # สมาชิก
 นายธนพล ประดิษฐ์ศิลป์ดี 6510685065 <br>
