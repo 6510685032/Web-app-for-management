@@ -1,0 +1,203 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        -256
+      ],
+      "id": "33a42f5b-cc7b-45a3-8876-8693ec73a1a6",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "filePath": "C:\\Users\\MyLaptop\\.n8n-files\\users.csv"
+      },
+      "id": "e1d03f3f-0008-41ae-b39f-c1a5d6f32297",
+      "name": "Read CSV File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "35c4513f-9f70-4bdc-8f9e-a4e64eeadfce",
+      "name": "Extract from CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "user",
+              "value": "={{ \"resident\" + Math.random().toString(36).substring(2, 8) }}"
+            },
+            {
+              "name": "password",
+              "value": "={{ Math.random().toString(36).slice(-8) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f0bc9f84-7fca-4b1c-9769-be31c3414fb2",
+      "name": "Generate Password",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8000/api/create-user/",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-TOKEN",
+              "value": "my-super-secret-token-123"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "first_name",
+              "value": "={{ $json.first_name }}"
+            },
+            {
+              "name": "last_name",
+              "value": "={{ $json.last_name }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            },
+            {
+              "name": "user_type",
+              "value": "={{ $json.user_type }}"
+            },
+            {
+              "name": "phone_number",
+              "value": "={{ $json.phone_number }}"
+            },
+            {
+              "name": "house_number",
+              "value": "={{ $json.house_number }}"
+            },
+            {
+              "name": "address",
+              "value": "={{ $json.address }}"
+            },
+            {
+              "name": "=user",
+              "value": "={{ $json.user }}"
+            },
+            {
+              "name": "=password",
+              "value": "={{ $json.password }}"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 250
+            }
+          }
+        }
+      },
+      "id": "f45bae42-32c3-4e4b-8bec-7447f7587d45",
+      "name": "HTTP Request1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        224,
+        -256
+      ],
+      "retryOnFail": false,
+      "executeOnce": false,
+      "notesInFlow": false,
+      "alwaysOutputData": false
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Read CSV File": {
+      "main": [
+        [
+          {
+            "node": "Extract from CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from CSV": {
+      "main": [
+        [
+          {
+            "node": "Generate Password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Password": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2cebae8d-de93-4948-b8df-2a7848b776fc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6d971ef6aef7d08ecc583eee774b9dadb373833f4bda97e3bb3e75e567694c26"
+  },
+  "id": "iySxrDQOUq8GGkFp",
+  "tags": []
+}
