@@ -114,40 +114,79 @@ def user_detail(request, pk):
         user_obj.delete()
         return Response({'message': 'User deleted successfully'})
 # --- 3. API สำหรับรับข้อมูลจาก n8n (POST) เหมือนเดิม ---
+# @api_view(['POST'])
+# @permission_classes([AllowAny])
+# def create_user_from_n8n(request):
+#     secret_token = request.headers.get('X-N8N-TOKEN')
+#     if secret_token != 'my-super-secret-token-123':
+#         return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+#     data = request.data
+#     email = data.get('email')
+#     password = data.get('password') 
+    
+#     if not email or not password:
+#         return Response({'error': 'Email and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     base_username = email.split('@')[0]
+#     username = base_username
+#     counter = 1
+#     while User.objects.filter(username=username).exists():
+#         username = f"{base_username}{counter}"
+#         counter += 1
+
+#     try:
+#         user = User.objects.create_user(
+#             username=username, email=email, password=password,
+#             first_name=data.get('first_name', ''), last_name=data.get('last_name', '')
+#         )
+#         UserProfile.objects.create(
+#             user=user, user_type=data.get('user_type', 'resident'),
+#             phone_number=data.get('phone_number', ''), raw_password=password,
+#             house_number=data.get('house_number', None), address=data.get('address', None)
+#         )
+#         return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+#     except Exception as e:
+#         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_user_from_n8n(request):
+
     secret_token = request.headers.get('X-N8N-TOKEN')
     if secret_token != 'my-super-secret-token-123':
-        return Response({'error': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Unauthorized'}, status=401)
 
     data = request.data
-    email = data.get('email')
-    password = data.get('password') 
-    
-    if not email or not password:
-        return Response({'error': 'Email and Password are required'}, status=status.HTTP_400_BAD_REQUEST)
+    username = data.get('user')
+    password = data.get('password')
 
-    base_username = email.split('@')[0]
-    username = base_username
-    counter = 1
-    while User.objects.filter(username=username).exists():
-        username = f"{base_username}{counter}"
-        counter += 1
+    if not username or not password:
+        return Response({'error': 'Username and Password required'}, status=400)
+
+    if User.objects.filter(username=username).exists():
+        return Response({'error': 'Username already exists'}, status=400)
 
     try:
         user = User.objects.create_user(
-            username=username, email=email, password=password,
-            first_name=data.get('first_name', ''), last_name=data.get('last_name', '')
+            username=username,
+            password=password,
+            first_name=data.get('first_name', ''),
+            last_name=data.get('last_name', '')
         )
+
         UserProfile.objects.create(
-            user=user, user_type=data.get('user_type', 'resident'),
-            phone_number=data.get('phone_number', ''), raw_password=password,
-            house_number=data.get('house_number', None), address=data.get('address', None)
+            user=user,
+            user_type=data.get('user_type', 'resident'),
+            phone_number=data.get('phone_number', ''),
+            raw_password=password,
+            house_number=data.get('house_number'),
+            address=data.get('address')
         )
-        return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+
+        return Response({'message': 'User created successfully'}, status=201)
+
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': str(e)}, status=500)
 
 # --- 4. API สำหรับ Login ---
 @api_view(['POST'])

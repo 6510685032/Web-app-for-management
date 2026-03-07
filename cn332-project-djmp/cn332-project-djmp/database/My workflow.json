@@ -14,7 +14,7 @@
     },
     {
       "parameters": {
-        "filePath": "C:\\Users\\MyLaptop\\.n8n-files\\users.csv"
+        "filePath": "C:\\Users\\MY_LAPTOP\\.n8n-files\\users.csv"
       },
       "id": "e1d03f3f-0008-41ae-b39f-c1a5d6f32297",
       "name": "Read CSV File",
@@ -108,11 +108,11 @@
               "value": "={{ $json.address }}"
             },
             {
-              "name": "=user",
+              "name": "user",
               "value": "={{ $json.user }}"
             },
             {
-              "name": "=password",
+              "name": "password",
               "value": "={{ $json.password }}"
             }
           ]

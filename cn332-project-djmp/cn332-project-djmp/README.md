@@ -1,7 +1,10 @@
+//ต้องdowload node.jsก่อนต้องเพิ่มเข้าenvด้วยนะpathไม่งันมันไม่ทำงาน
+
 backend
 
 cd backend
-pip install -r requirements.txt
+pip install -r requirements.txt  
+python manage.py makemigrations api
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
@@ -12,11 +15,15 @@ http://127.0.0.1:8000/api/users/
 frontend
 
 cd fronted
-npm install
+npm install   
 npm run dev
 
 database
 -n8n
+-postgreSQL
+
+https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+-version 16.13
 
 npm install -g n8n
 

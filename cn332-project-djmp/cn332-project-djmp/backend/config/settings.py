@@ -85,24 +85,16 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 USE_MYSQL = os.environ.get("USE_MYSQL", "False") == "True"
 
-if USE_MYSQL:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'cn332',
-            'USER': 'root',
-            'PASSWORD': 'cn332',
-            'HOST': '127.0.0.1',
-            'PORT': '3306',
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cn332',
+        'USER': 'postgres',
+        'PASSWORD': '1234',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -149,7 +141,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 CORS_ALLOW_ALL_ORIGINS = True
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ]
 }
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
