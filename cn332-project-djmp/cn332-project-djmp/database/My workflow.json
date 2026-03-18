@@ -4,47 +4,34 @@
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [
-        992,
-        48
-      ],
-      "id": "db9e4fd5-ef76-49d6-aad5-fb717a4ae186",
+      "position": [1920, 320],
+      "id": "e58497da-a814-4091-b377-46d252327eb9",
       "name": "When clicking ‘Execute workflow’"
     },
     {
       "parameters": {
         "filePath": "C:\\Users\\MY_LAPTOP\\.n8n-files\\users.csv"
       },
-      "id": "42113eba-15df-4b2e-acee-c05de66c3afb",
+      "id": "7a67b7a3-3cb1-4395-afd2-7c5760bb8f94",
       "name": "Read CSV File",
       "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
-      "position": [
-        1184,
-        48
-      ]
+      "position": [2112, 320]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "d6b96a29-1f9f-43d5-b920-eea1df97416d",
+      "id": "f1cd963a-295d-4519-ac21-9b4fd8937d26",
       "name": "Extract from CSV",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
-      "position": [
-        1376,
-        48
-      ]
+      "position": [2304, 320]
     },
     {
       "parameters": {
         "values": {
           "string": [
-            {
-              "name": "user",
-              "value": "={{ $json.user_type + \"_\" + Date.now().toString(36) + Math.random().toString(36).slice(2,6) }}"
-            },
             {
               "name": "password",
               "value": "={{ Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,6).toUpperCase() }}"
@@ -53,14 +40,11 @@
         },
         "options": {}
       },
-      "id": "595287ad-4389-47ba-a3ec-3a4ca45ee601",
+      "id": "bf537644-a99e-463e-b46b-3fdfb89308c7",
       "name": "Generate Password",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
-      "position": [
-        1568,
-        48
-      ]
+      "position": [2496, 320]
     },
     {
       "parameters": {
@@ -88,11 +72,11 @@
             },
             {
               "name": "email",
-              "value": "={{ $json.email }}"
+              "value": "={{ ($json.email || '').trim().toLowerCase() }}"
             },
             {
               "name": "user_type",
-              "value": "={{ $json.user_type }}"
+              "value": "={{ ($json.user_type || '').trim().toLowerCase() }}"
             },
             {
               "name": "phone_number",
@@ -105,10 +89,6 @@
             {
               "name": "address",
               "value": "={{ $json.address }}"
-            },
-            {
-              "name": "user",
-              "value": "={{ $json.user }}"
             },
             {
               "name": "password",
@@ -125,14 +105,11 @@
           }
         }
       },
-      "id": "5f91eb8f-62a1-489a-b6eb-07eae658e4a1",
+      "id": "04b7ce4c-dae9-4e5f-9673-bb22c82f2e8b",
       "name": "HTTP Request1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [
-        1760,
-        48
-      ],
+      "position": [2688, 320],
       "retryOnFail": false,
       "executeOnce": false,
       "notesInFlow": false,

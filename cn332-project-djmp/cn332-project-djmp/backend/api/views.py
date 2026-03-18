@@ -42,18 +42,21 @@ def manage_users(request):
 
     if request.method == 'POST':
         data = request.data
-        email = data.get("email")
+        email = (data.get("email") or "").strip()
         password = data.get("password")
-        name = data.get("name", "").strip()
+        name = (data.get("name") or "").strip()
 
         if not email or not password:
             return Response({"error": "Email and password required"}, status=400)
+
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({"error": "Email already exists"}, status=400)
 
         name_parts = name.split(" ")
         first_name = name_parts[0] if len(name_parts) > 0 else ""
         last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
 
-        base_username = email.split("@")[0]
+        base_username = email.split("@")[0].strip().lower()
         username = base_username
         counter = 1
 
@@ -103,9 +106,13 @@ def user_detail(request, pk):
     if request.method == "PUT":
         data = request.data
 
-        user_obj.email = data.get("email", user_obj.email)
-        name = data.get("name", "").strip()
+        new_email = data.get("email", user_obj.email)
+        if new_email and new_email.lower() != (user_obj.email or "").lower():
+            if User.objects.filter(email__iexact=new_email).exclude(id=user_obj.id).exists():
+                return Response({"error": "Email already exists"}, status=400)
+            user_obj.email = new_email
 
+        name = (data.get("name") or "").strip()
         if name:
             name_parts = name.split(" ")
             user_obj.first_name = name_parts[0]
@@ -141,36 +148,96 @@ def create_user_from_n8n(request):
         return Response({"error": "Unauthorized"}, status=401)
 
     data = request.data
-    username = data.get("user")
     password = data.get("password")
+    user_type = (data.get("user_type") or "").strip().lower()
+    email = (data.get("email") or "").strip().lower()
 
-    if not username or not password:
-        return Response({"error": "Username and password required"}, status=400)
+    allowed_roles = {"resident", "officer", "technician", "admin"}
 
-    if User.objects.filter(username=username).exists():
-        return Response({"error": "Username exists"}, status=400)
+    if not password or not user_type or not email:
+        return Response({"error": "Email, password and user_type are required"}, status=400)
+
+    if user_type not in allowed_roles:
+        return Response({"error": "Invalid user_type"}, status=400)
+
+    first_name = data.get("first_name", "")
+    last_name = data.get("last_name", "")
+    phone_number = data.get("phone_number", "")
+    house_number = data.get("house_number") or ""
+    address = data.get("address")
+
+    existing_user = User.objects.filter(email__iexact=email).first()
+
+    # ถ้ามี email นี้อยู่แล้ว -> ไม่สร้างใหม่ แต่ update ข้อมูลเดิม
+    if existing_user:
+        existing_user.first_name = first_name
+        existing_user.last_name = last_name
+        existing_user.email = email
+        existing_user.set_password(password)
+        existing_user.save()
+
+        profile, _ = UserProfile.objects.get_or_create(user=existing_user)
+        profile.user_type = user_type
+        profile.phone_number = phone_number
+        profile.house_number = house_number
+        profile.address = address
+        profile.raw_password = password
+        profile.save()
+
+        profile.refresh_from_db()
+
+        return Response({
+            "message": "Existing user updated",
+            "id": existing_user.id,
+            "username": existing_user.username,
+            "role": profile.user_type,
+            "email": existing_user.email,
+            "raw_password": profile.raw_password,
+            "created": False,
+            "updated": True
+        }, status=200)
+
+    # ถ้ายังไม่มี -> สร้างใหม่
+    base_username = f"{user_type}_{User.objects.count() + 1}"
+    username = base_username
+    counter = 1
+
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}_{counter}"
+        counter += 1
 
     try:
         user = User.objects.create_user(
             username=username,
             password=password,
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
-            email=data.get("email", "")
+            first_name=first_name,
+            last_name=last_name,
+            email=email
         )
 
         profile = user.profile
-        profile.user_type = data.get("user_type", "resident")
-        profile.phone_number = data.get("phone_number", "")
-        profile.house_number = data.get("house_number") or ""
-        profile.address = data.get("address")
+        profile.user_type = user_type
+        profile.phone_number = phone_number
+        profile.house_number = house_number
+        profile.address = address
+        profile.raw_password = password
         profile.save()
 
-        return Response({"message": "User created"}, status=201)
+        profile.refresh_from_db()
+
+        return Response({
+            "message": "User created",
+            "id": user.id,
+            "username": username,
+            "role": user_type,
+            "email": email,
+            "raw_password": profile.raw_password,
+            "created": True,
+            "updated": False
+        }, status=201)
 
     except Exception as e:
         return Response({"error": str(e)}, status=500)
-
 
 # =========================================
 # 4. LOGIN
@@ -178,7 +245,7 @@ def create_user_from_n8n(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    identifier = request.data.get("username", "").strip()
+    identifier = (request.data.get("username") or "").strip()
     password = request.data.get("password", "")
 
     if not identifier or not password:
@@ -247,14 +314,18 @@ def me(request):
     if request.method == 'PATCH':
         data = request.data
 
-        name = data.get("name", "").strip()
+        name = (data.get("name") or "").strip()
         if name:
             name_parts = name.split(" ")
             user_obj.first_name = name_parts[0]
             user_obj.last_name = " ".join(name_parts[1:])
 
         if "email" in data:
-            user_obj.email = data.get("email", user_obj.email)
+            new_email = (data.get("email") or "").strip()
+            if new_email and new_email.lower() != (user_obj.email or "").lower():
+                if User.objects.filter(email__iexact=new_email).exclude(id=user_obj.id).exists():
+                    return Response({"error": "Email already exists"}, status=400)
+                user_obj.email = new_email
 
         user_obj.save()
 
@@ -567,7 +638,7 @@ def request_task_extension(request, pk):
         return Response({"error": "Task not found"}, status=404)
 
     days = request.data.get("days")
-    reason = request.data.get("reason", "").strip()
+    reason = (request.data.get("reason") or "").strip()
 
     if not days or not reason:
         return Response({"error": "Days and reason are required"}, status=400)
