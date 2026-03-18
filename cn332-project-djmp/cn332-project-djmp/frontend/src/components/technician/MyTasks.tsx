@@ -1,67 +1,65 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, Calendar } from 'lucide-react';
 import StatusBadge, { Status } from '../shared/StatusBadge';
+import api from '../../utils/api';
+
+interface TaskItem {
+  id: string | number;
+  request_code?: string;
+  resident?: string;
+  unit?: string;
+  category: string;
+  description: string;
+  priority: string;
+  status: Status;
+  scheduled_date?: string;
+  scheduled_time?: string;
+  location?: string;
+}
 
 export default function MyTasks() {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const tasks = [
-    {
-      id: 'REQ-2026-001',
-      resident: 'Sarah Johnson',
-      unit: 'A-205',
-      category: 'Plumbing',
-      description: 'Kitchen sink faucet leaking',
-      priority: 'high',
-      status: 'in-progress' as Status,
-      scheduledDate: '2026-01-31',
-      scheduledTime: '10:00 AM',
-      location: 'Building A, Floor 2',
-    },
-    {
-      id: 'REQ-2026-004',
-      resident: 'Michael Brown',
-      unit: 'B-102',
-      category: 'Electrical',
-      description: 'Power outlet not working',
-      priority: 'medium',
-      status: 'assigned' as Status,
-      scheduledDate: '2026-01-31',
-      scheduledTime: '2:00 PM',
-      location: 'Building B, Floor 1',
-    },
-    {
-      id: 'REQ-2026-002',
-      resident: 'Emily Davis',
-      unit: 'C-308',
-      category: 'Plumbing',
-      description: 'Bathroom drain clogged',
-      priority: 'medium',
-      status: 'completed' as Status,
-      scheduledDate: '2026-01-28',
-      scheduledTime: '9:00 AM',
-      location: 'Building C, Floor 3',
-    },
-    {
-      id: 'REQ-2026-015',
-      resident: 'James Wilson',
-      unit: 'D-401',
-      category: 'Plumbing',
-      description: 'Water heater not heating',
-      priority: 'high',
-      status: 'assigned' as Status,
-      scheduledDate: '2026-02-01',
-      scheduledTime: '10:30 AM',
-      location: 'Building D, Floor 4',
-    },
-  ];
+  useEffect(() => {
+    const fetchTasks = async () => {
+      setLoading(true);
+      setErrorMessage('');
 
-  const filteredTasks = tasks.filter((task) => {
-    if (filterStatus === 'all') return true;
-    return task.status === filterStatus;
-  });
+      try {
+        const response = await api.get('/tasks/my/');
+        setTasks(Array.isArray(response.data) ? response.data : []);
+      } catch (error: any) {
+        console.error('Error fetching tasks:', error);
+        setErrorMessage(
+          error?.response?.data?.error || 'ไม่สามารถโหลดงานที่ได้รับมอบหมายได้'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, []);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const matchesStatus = filterStatus === 'all' || task.status === filterStatus;
+      const search = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        String(task.request_code || task.id).toLowerCase().includes(search) ||
+        (task.resident || '').toLowerCase().includes(search) ||
+        (task.description || '').toLowerCase().includes(search);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [tasks, filterStatus, searchTerm]);
 
   const statusCounts = {
     all: tasks.length,
@@ -94,13 +92,11 @@ export default function MyTasks() {
       </button>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">My Tasks</h1>
           <p className="text-blue-100">Manage and update your assigned maintenance tasks</p>
         </div>
 
-        {/* Filter Tabs */}
         <div className="border-b border-blue-100 bg-blue-50 px-6">
           <div className="flex gap-4 overflow-x-auto">
             {[
@@ -127,7 +123,6 @@ export default function MyTasks() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="p-6 border-b border-blue-100">
           <div className="flex gap-4">
             <div className="flex-1 relative">
@@ -135,6 +130,8 @@ export default function MyTasks() {
               <input
                 type="text"
                 placeholder="Search by ID, resident, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -145,68 +142,84 @@ export default function MyTasks() {
           </div>
         </div>
 
-        {/* Tasks Grid */}
+        {errorMessage && (
+          <div className="px-6 py-4 bg-red-50 border-b border-red-200 text-red-700">
+            {errorMessage}
+          </div>
+        )}
+
         <div className="p-6 grid md:grid-cols-2 gap-4">
-          {filteredTasks.map((task) => (
-            <div
-              key={task.id}
-              onClick={() => navigate(`/technician/tasks/${task.id}`)}
-              className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md cursor-pointer transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium text-blue-900">{task.id}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(
-                        task.priority
-                      )}`}
-                    >
-                      {task.priority}
-                    </span>
-                  </div>
-                  <StatusBadge status={task.status} size="sm" />
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <p className="font-medium text-blue-900 mb-1">{task.resident}</p>
-                <p className="text-sm text-blue-700">Unit {task.unit}</p>
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded-lg mb-3">
-                <p className="text-sm font-medium text-blue-900 mb-1">{task.category}</p>
-                <p className="text-sm text-blue-600">{task.description}</p>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1 text-blue-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>
-                    {new Date(task.scheduledDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                  <span className="mx-1">•</span>
-                  <span>{task.scheduledTime}</span>
-                </div>
-                {task.status === 'assigned' && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Start Task
-                  </button>
-                )}
-              </div>
+          {loading ? (
+            <div className="col-span-full p-8 text-center text-blue-600 font-medium">
+              Loading tasks...
             </div>
-          ))}
+          ) : (
+            filteredTasks.map((task) => (
+              <div
+                key={task.id}
+                onClick={() => navigate(`/technician/tasks/${task.id}`)}
+                className="p-4 border-2 border-blue-200 rounded-lg hover:border-blue-400 hover:shadow-md cursor-pointer transition-all"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-medium text-blue-900">
+                        {task.request_code || task.id}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(
+                          task.priority
+                        )}`}
+                      >
+                        {task.priority}
+                      </span>
+                    </div>
+                    <StatusBadge status={task.status} size="sm" />
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <p className="font-medium text-blue-900">{task.resident || '-'}</p>
+                  <p className="text-sm text-blue-700">Unit {task.unit || '-'}</p>
+                </div>
+
+                <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                  <p className="text-sm font-medium text-blue-900 mb-1">{task.category}</p>
+                  <p className="text-sm text-blue-600">{task.description}</p>
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1 text-blue-600">
+                    <Calendar className="w-4 h-4" />
+                    <span>
+                      {task.scheduled_date
+                        ? new Date(task.scheduled_date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : '-'}
+                    </span>
+                    <span className="mx-1">•</span>
+                    <span>{task.scheduled_time || '-'}</span>
+                  </div>
+
+                  {task.status === 'assigned' && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Start Task
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
-        {filteredTasks.length === 0 && (
+        {!loading && filteredTasks.length === 0 && (
           <div className="p-12 text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-blue-400" />

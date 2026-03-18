@@ -1,84 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Filter, Calendar } from 'lucide-react';
 import StatusBadge, { Status } from '../shared/StatusBadge';
+import api from '../../utils/api';
+
+interface RequestItem {
+  id: string | number;
+  request_code?: string;
+  category: string;
+  description: string;
+  status: Status;
+  created_at?: string;
+  date?: string;
+  technician?: string;
+  priority: string;
+  location: string;
+}
 
 export default function RequestTracking() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const requests = [
-    {
-      id: 'REQ-2026-001',
-      category: 'Plumbing',
-      description: 'Kitchen sink faucet leaking',
-      status: 'in-progress' as Status,
-      date: '2026-01-28',
-      technician: 'John Smith',
-      priority: 'medium',
-      location: 'My Unit',
-    },
-    {
-      id: 'REQ-2026-002',
-      category: 'Electrical',
-      description: 'Living room light fixture not working',
-      status: 'completed' as Status,
-      date: '2026-01-25',
-      technician: 'Maria Garcia',
-      priority: 'low',
-      location: 'My Unit',
-    },
-    {
-      id: 'REQ-2026-003',
-      category: 'Common Area',
-      description: 'Elevator button stuck on 3rd floor',
-      status: 'pending' as Status,
-      date: '2026-01-30',
-      technician: '-',
-      priority: 'high',
-      location: 'Common Area - Elevator',
-    },
-    {
-      id: 'REQ-2026-004',
-      category: 'Air Conditioning',
-      description: 'AC unit making loud noise',
-      status: 'in-progress' as Status,
-      date: '2026-01-27',
-      technician: 'David Lee',
-      priority: 'medium',
-      location: 'My Unit',
-    },
-    {
-      id: 'REQ-2025-012',
-      category: 'Structural',
-      description: 'Ceiling paint peeling in bedroom',
-      status: 'completed' as Status,
-      date: '2025-12-15',
-      technician: 'Robert Chen',
-      priority: 'low',
-      location: 'My Unit',
-    },
-    {
-      id: 'REQ-2025-011',
-      category: 'Plumbing',
-      description: 'Bathroom drain clogged',
-      status: 'completed' as Status,
-      date: '2025-12-10',
-      technician: 'John Smith',
-      priority: 'medium',
-      location: 'My Unit',
-    },
-  ];
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setLoading(true);
+      setErrorMessage('');
 
-  const filteredRequests = requests.filter((req) => {
-    const matchesSearch =
-      req.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || req.status === filterStatus;
-    return matchesSearch && matchesFilter;
-  });
+      try {
+        const response = await api.get('/maintenance-requests/');
+        setRequests(Array.isArray(response.data) ? response.data : []);
+      } catch (error: any) {
+        console.error('Error fetching requests:', error);
+        setErrorMessage(
+          error?.response?.data?.error || 'ไม่สามารถโหลดรายการแจ้งซ่อมได้'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, []);
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter((req) => {
+      const displayId = String(req.request_code || req.id).toLowerCase();
+      const matchesSearch =
+        displayId.includes(searchTerm.toLowerCase()) ||
+        req.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        req.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesFilter = filterStatus === 'all' || req.status === filterStatus;
+      return matchesSearch && matchesFilter;
+    });
+  }, [requests, searchTerm, filterStatus]);
 
   const statusCounts = {
     all: requests.length,
@@ -111,13 +90,11 @@ export default function RequestTracking() {
       </button>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
           <h1 className="text-2xl font-bold mb-2">My Maintenance Requests</h1>
           <p className="text-blue-100">Track all your submitted requests and their current status</p>
         </div>
 
-        {/* Filter Tabs */}
         <div className="border-b border-blue-100 bg-blue-50 px-6">
           <div className="flex gap-4 overflow-x-auto">
             {[
@@ -144,7 +121,6 @@ export default function RequestTracking() {
           </div>
         </div>
 
-        {/* Search and Filter */}
         <div className="p-6 border-b border-blue-100 bg-white">
           <div className="flex gap-4">
             <div className="flex-1 relative">
@@ -164,86 +140,102 @@ export default function RequestTracking() {
           </div>
         </div>
 
-        {/* Requests List */}
+        {errorMessage && (
+          <div className="px-6 py-4 bg-red-50 border-b border-red-200 text-red-700">
+            {errorMessage}
+          </div>
+        )}
+
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-blue-50 border-b border-blue-100">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Request ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Technician
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-blue-100 bg-white">
-              {filteredRequests.map((request) => (
-                <tr
-                  key={request.id}
-                  onClick={() => navigate(`/resident/requests/${request.id}`)}
-                  className="hover:bg-blue-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="font-medium text-blue-900">{request.id}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-blue-700">{request.category}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-blue-600">{request.description}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-blue-600 text-sm">{request.location}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`font-medium capitalize ${getPriorityColor(request.priority)}`}>
-                      {request.priority}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <StatusBadge status={request.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-blue-700">{request.technician}</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>
-                        {new Date(request.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                  </td>
+          {loading ? (
+            <div className="p-8 text-center text-blue-600 font-medium">
+              Loading requests...
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-blue-50 border-b border-blue-100">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Request ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Category
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Priority
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Technician
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">
+                    Date
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-blue-100 bg-white">
+                {filteredRequests.map((request) => (
+                  <tr
+                    key={request.id}
+                    onClick={() => navigate(`/resident/requests/${request.id}`)}
+                    className="hover:bg-blue-50 cursor-pointer transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="font-medium text-blue-900">
+                        {request.request_code || request.id}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-blue-700">{request.category}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="text-blue-600">{request.description}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-blue-600 text-sm">{request.location}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`font-medium capitalize ${getPriorityColor(request.priority)}`}>
+                        {request.priority}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <StatusBadge status={request.status} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-blue-700">{request.technician || '-'}</span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          {new Date(request.created_at || request.date || '').toLocaleDateString(
+                            'en-US',
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            }
+                          )}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
-        {filteredRequests.length === 0 && (
+        {!loading && filteredRequests.length === 0 && (
           <div className="p-12 text-center">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-8 h-8 text-blue-400" />

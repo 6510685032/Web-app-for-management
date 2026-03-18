@@ -1,41 +1,40 @@
 {
-  "name": "My workflow",
   "nodes": [
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -544,
-        -256
+        992,
+        48
       ],
-      "id": "33a42f5b-cc7b-45a3-8876-8693ec73a1a6",
+      "id": "db9e4fd5-ef76-49d6-aad5-fb717a4ae186",
       "name": "When clicking ‘Execute workflow’"
     },
     {
       "parameters": {
         "filePath": "C:\\Users\\MY_LAPTOP\\.n8n-files\\users.csv"
       },
-      "id": "e1d03f3f-0008-41ae-b39f-c1a5d6f32297",
+      "id": "42113eba-15df-4b2e-acee-c05de66c3afb",
       "name": "Read CSV File",
       "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
       "position": [
-        -352,
-        -256
+        1184,
+        48
       ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "35c4513f-9f70-4bdc-8f9e-a4e64eeadfce",
+      "id": "d6b96a29-1f9f-43d5-b920-eea1df97416d",
       "name": "Extract from CSV",
       "type": "n8n-nodes-base.extractFromFile",
       "typeVersion": 1,
       "position": [
-        -160,
-        -256
+        1376,
+        48
       ]
     },
     {
@@ -44,23 +43,23 @@
           "string": [
             {
               "name": "user",
-              "value": "={{ \"resident\" + Math.random().toString(36).substring(2, 8) }}"
+              "value": "={{ $json.user_type + \"_\" + Date.now().toString(36) + Math.random().toString(36).slice(2,6) }}"
             },
             {
               "name": "password",
-              "value": "={{ Math.random().toString(36).slice(-8) }}"
+              "value": "={{ Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,6).toUpperCase() }}"
             }
           ]
         },
         "options": {}
       },
-      "id": "f0bc9f84-7fca-4b1c-9769-be31c3414fb2",
+      "id": "595287ad-4389-47ba-a3ec-3a4ca45ee601",
       "name": "Generate Password",
       "type": "n8n-nodes-base.set",
       "typeVersion": 1,
       "position": [
-        32,
-        -256
+        1568,
+        48
       ]
     },
     {
@@ -72,7 +71,7 @@
           "parameters": [
             {
               "name": "X-N8N-TOKEN",
-              "value": "my-super-secret-token-123"
+              "value": "a21a47ce027fa1bbbd180291ad3a7898a3e7e5261b8a38a562b17d3cac663caf"
             }
           ]
         },
@@ -126,13 +125,13 @@
           }
         }
       },
-      "id": "f45bae42-32c3-4e4b-8bec-7447f7587d45",
+      "id": "5f91eb8f-62a1-489a-b6eb-07eae658e4a1",
       "name": "HTTP Request1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        224,
-        -256
+        1760,
+        48
       ],
       "retryOnFail": false,
       "executeOnce": false,
@@ -140,8 +139,18 @@
       "alwaysOutputData": false
     }
   ],
-  "pinData": {},
   "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read CSV File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Read CSV File": {
       "main": [
         [
@@ -174,30 +183,10 @@
           }
         ]
       ]
-    },
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "Read CSV File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
-  "active": false,
-  "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate",
-    "availableInMCP": false
-  },
-  "versionId": "2cebae8d-de93-4948-b8df-2a7848b776fc",
+  "pinData": {},
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "6d971ef6aef7d08ecc583eee774b9dadb373833f4bda97e3bb3e75e567694c26"
-  },
-  "id": "iySxrDQOUq8GGkFp",
-  "tags": []
+    "instanceId": "3e7f00286b5b1bd6f2c840d2cceb0716320c852991fe2cedf151187a36da5c0f"
+  }
 }

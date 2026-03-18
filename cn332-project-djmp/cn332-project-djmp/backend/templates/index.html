@@ -3,16 +3,11 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script type="module">
-      import RefreshRuntime from 'http://localhost:5173/@react-refresh'
-      RefreshRuntime.injectIntoGlobalHook(window)
-      window.$RefreshReg$ = () => {}
-      window.$RefreshSig$ = () => (type) => type
-      window.__vite_plugin_react_preamble_installed__ = true
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Digital Juristic Management Platform</title>
+
     {% vite_hmr_client %}
     {% vite_asset 'src/main.tsx' %}
-
   </head>
 
   <body>

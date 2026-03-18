@@ -1,21 +1,25 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import api from "../utils/api";
 
-export type UserRole = 'resident' | 'officer' | 'technician' | 'admin';
+
+export type UserRole = "resident" | "officer" | "technician" | "admin";
 
 export interface User {
   id: string;
+  username: string;
   name: string;
   email: string;
   role: UserRole;
   avatar?: string;
-  unit?: string;
+  unit_number?: string;
   phone?: string;
   joinDate?: string;
 }
 
 interface UserContextType {
   user: User | null;
-  login: (identifier: string, password: string) => Promise<boolean>; // เปลี่ยนจาก email เป็น identifier
+  loading: boolean;
+  login: (identifier: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
 }
@@ -23,69 +27,79 @@ interface UserContextType {
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
-  // 1. เช็คข้อมูลผู้ใช้จาก localStorage เมื่อโหลด Component
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem('user');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
     if (savedUser) {
       try {
-        return JSON.parse(savedUser);
+        setUser(JSON.parse(savedUser));
       } catch (error) {
         console.error("Failed to parse user from localStorage", error);
-        return null;
+        localStorage.removeItem("user");
       }
     }
-    return null;
-  });
+    setLoading(false);
+  }, []);
 
-  // ฟังก์ชัน Login ที่ส่งค่า 'username' ไปหา Django
   const login = async (identifier: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:8000/api/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // ✨ ส่ง Key เป็น 'username' ตามที่ Backend รอรับ
-        body: JSON.stringify({ 
-          username: identifier, 
-          password: password 
-        }),
+      const response = await api.post("/login/", {
+        username: identifier,
+        password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      // ตรวจสอบความสำเร็จจาก Response
-      if (response.ok && data.status === 'success') {
-        setUser(data.user); 
-        // บันทึกลง localStorage เพื่อให้รีเฟรชหน้าแล้วไม่หลุด
-        localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.access && data.user) {
+        const userData: User = {
+          id: String(data.user.id),
+          username: data.user.username,
+          name: data.user.name || data.user.username,
+          email: data.user.email || "",
+          role: data.user.role,
+          phone: data.user.phone || "",
+          unit_number: data.user.unit_number || data.user.house_number || "",
+          joinDate: data.user.joinDate || "",
+        };
+
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("access_token", data.access);
+
+        if (data.refresh) {
+          localStorage.setItem("refresh_token", data.refresh);
+        }
+
         return true;
-      } else {
-        // กรณีรหัสผ่านผิด หรือไม่พบ Username
-        console.error("Login failed:", data.message || "Invalid credentials");
-        return false;
       }
+
+      return false;
     } catch (error) {
-      console.error("Login connection error:", error);
+      console.error("Login error:", error);
       return false;
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    localStorage.removeItem("user");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
   };
 
   const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    }
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updatedUser = { ...prev, ...userData };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
   };
 
   return (
-    <UserContext.Provider value={{ user, login, logout, updateUser }}>
+    <UserContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </UserContext.Provider>
   );
@@ -94,7 +108,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 export function useUser() {
   const context = useContext(UserContext);
   if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
+    throw new Error("useUser must be used within a UserProvider");
   }
   return context;
 }

@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, X, CheckCircle } from 'lucide-react';
+import api from '../../utils/api';
 
 export default function MaintenanceRequestForm() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     category: '',
     location: '',
     description: '',
     priority: 'medium',
   });
+
   const [images, setImages] = useState<File[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [createdRequestId, setCreatedRequestId] = useState('');
 
   const categories = [
     'Plumbing',
@@ -36,24 +42,66 @@ export default function MaintenanceRequestForm() {
     'Other',
   ];
 
+  const imagePreviews = useMemo(
+    () => images.map((image) => ({ file: image, url: URL.createObjectURL(image) })),
+    [images]
+  );
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newImages = Array.from(e.target.files);
-      setImages([...images, ...newImages]);
+      setImages((prev) => [...prev, ...newImages]);
     }
   };
 
   const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate submission
-    setSubmitted(true);
-    setTimeout(() => {
-      navigate('/resident/requests');
-    }, 2000);
+    setSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const payload = new FormData();
+      payload.append('category', formData.category);
+      payload.append('location', formData.location);
+      payload.append('description', formData.description);
+      payload.append('priority', formData.priority);
+
+      images.forEach((image) => {
+        payload.append('images', image);
+      });
+
+      const response = await api.post('/maintenance-requests/', payload, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      const requestId =
+        response.data?.request?.request_code ||
+        response.data?.request?.id ||
+        response.data?.id ||
+        'Submitted';
+
+      setCreatedRequestId(String(requestId));
+      setSubmitted(true);
+
+      setTimeout(() => {
+        navigate('/resident/requests');
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error submitting request:', error);
+      setErrorMessage(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          'ไม่สามารถส่งคำขอแจ้งซ่อมได้'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -70,7 +118,7 @@ export default function MaintenanceRequestForm() {
           </p>
           <div className="bg-blue-50 p-4 rounded-lg inline-block">
             <p className="text-sm text-blue-700 mb-1">Request ID</p>
-            <p className="text-2xl font-bold text-blue-900">REQ-2026-005</p>
+            <p className="text-2xl font-bold text-blue-900">{createdRequestId}</p>
           </div>
         </div>
       </div>
@@ -94,7 +142,12 @@ export default function MaintenanceRequestForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Category */}
+          {errorMessage && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+              {errorMessage}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Problem Category <span className="text-red-500">*</span>
@@ -104,6 +157,7 @@ export default function MaintenanceRequestForm() {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              disabled={submitting}
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
@@ -114,7 +168,6 @@ export default function MaintenanceRequestForm() {
             </select>
           </div>
 
-          {/* Location */}
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Location <span className="text-red-500">*</span>
@@ -124,6 +177,7 @@ export default function MaintenanceRequestForm() {
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+              disabled={submitting}
             >
               <option value="">Select a location</option>
               {locations.map((loc) => (
@@ -134,7 +188,6 @@ export default function MaintenanceRequestForm() {
             </select>
           </div>
 
-          {/* Priority */}
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Priority Level <span className="text-red-500">*</span>
@@ -149,10 +202,9 @@ export default function MaintenanceRequestForm() {
                   key={priority.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, priority: priority.value })}
+                  disabled={submitting}
                   className={`px-4 py-3 rounded-lg border-2 transition-all ${priority.color} ${
-                    formData.priority === priority.value
-                      ? 'ring-2 ring-blue-500 bg-blue-50'
-                      : 'bg-white'
+                    formData.priority === priority.value ? 'ring-2 ring-blue-500 bg-blue-50' : 'bg-white'
                   }`}
                 >
                   <span className="font-medium text-blue-900">{priority.label}</span>
@@ -161,7 +213,6 @@ export default function MaintenanceRequestForm() {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Problem Description <span className="text-red-500">*</span>
@@ -172,13 +223,13 @@ export default function MaintenanceRequestForm() {
               className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
               placeholder="Please provide a detailed description of the problem..."
               required
+              disabled={submitting}
             />
             <p className="text-sm text-blue-500 mt-2">
               Tip: Include specific details about when the problem started and any relevant circumstances
             </p>
           </div>
 
-          {/* Image Upload */}
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
               Upload Images (Optional)
@@ -191,6 +242,7 @@ export default function MaintenanceRequestForm() {
                 multiple
                 onChange={handleImageUpload}
                 className="hidden"
+                disabled={submitting}
               />
               <label htmlFor="image-upload" className="cursor-pointer">
                 <Upload className="w-12 h-12 text-blue-400 mx-auto mb-3" />
@@ -199,12 +251,12 @@ export default function MaintenanceRequestForm() {
               </label>
             </div>
 
-            {images.length > 0 && (
+            {imagePreviews.length > 0 && (
               <div className="grid grid-cols-3 gap-4 mt-4">
-                {images.map((image, index) => (
+                {imagePreviews.map((image, index) => (
                   <div key={index} className="relative group">
                     <img
-                      src={URL.createObjectURL(image)}
+                      src={image.url}
                       alt={`Upload ${index + 1}`}
                       className="w-full h-32 object-cover rounded-lg border border-blue-200"
                     />
@@ -221,18 +273,19 @@ export default function MaintenanceRequestForm() {
             )}
           </div>
 
-          {/* Submit Buttons */}
           <div className="flex gap-3 pt-4 border-t border-blue-100">
             <button
               type="submit"
-              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              disabled={submitting}
+              className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Submit Request
+              {submitting ? 'Submitting...' : 'Submit Request'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/resident')}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              disabled={submitting}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
