@@ -17,10 +17,16 @@ urlpatterns = [
 
     path("api/maintenance-requests/", views.maintenance_requests, name="maintenance_requests"),
     path("api/maintenance-requests/<int:pk>/", views.maintenance_request_detail, name="maintenance_request_detail"),
+    path("api/maintenance-requests/<int:pk>/manage/", views.manage_request_status, name="manage_request_status"),
 
     path("api/tasks/my/", views.my_tasks, name="my_tasks"),
     path("api/tasks/<int:pk>/", views.task_detail, name="task_detail"),
     path("api/tasks/<int:pk>/request-extension/", views.request_task_extension, name="request_task_extension"),
+
+    path("api/announcements/", views.announcements_view, name="announcements"),
+    path("api/dashboard-stats/", views.dashboard_stats, name="dashboard_stats"),
+    path("api/technician-schedule/", views.technician_schedule, name="technician_schedule"),
+    path("api/technicians/", views.list_technicians, name="list_technicians"),
 
     re_path(
         r"^(?!api/|static/|media/|admin/).*",
