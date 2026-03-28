@@ -5,8 +5,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, logout
+from django.utils import timezone
+from datetime import timedelta
 
-from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage
+from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage, Announcement
 
 
 # =========================================
@@ -32,6 +34,7 @@ def manage_users(request):
                     "role": p.user_type,
                     "phone": p.phone_number,
                     "unit_number": unit,
+                    "specialty": p.specialty or "",
                     "joinDate": p.user.date_joined.strftime('%Y-%m-%d') if p.user.date_joined else None
                 })
 
@@ -78,6 +81,7 @@ def manage_users(request):
             profile.phone_number = data.get("phone", "")
             profile.house_number = data.get("unit_number", "")
             profile.address = data.get("address")
+            profile.specialty = data.get("specialty", "")
             profile.save()
 
             return Response({
@@ -128,6 +132,8 @@ def user_detail(request, pk):
         profile.phone_number = data.get("phone", profile.phone_number)
         profile.house_number = data.get("unit_number", profile.house_number)
         profile.address = data.get("address", profile.address)
+        if "specialty" in data:
+            profile.specialty = data.get("specialty", profile.specialty)
         profile.save()
 
         return Response({"message": "User updated"})
@@ -168,7 +174,6 @@ def create_user_from_n8n(request):
 
     existing_user = User.objects.filter(email__iexact=email).first()
 
-    # ถ้ามี email นี้อยู่แล้ว -> ไม่สร้างใหม่ แต่ update ข้อมูลเดิม
     if existing_user:
         existing_user.first_name = first_name
         existing_user.last_name = last_name
@@ -197,7 +202,6 @@ def create_user_from_n8n(request):
             "updated": True
         }, status=200)
 
-    # ถ้ายังไม่มี -> สร้างใหม่
     base_username = f"{user_type}_{User.objects.count() + 1}"
     username = base_username
     counter = 1
@@ -283,6 +287,7 @@ def login_view(request):
             "role": profile.user_type if profile else "resident",
             "phone": phone,
             "unit_number": unit,
+            "specialty": profile.specialty if profile else "",
             "joinDate": user_obj.date_joined.strftime("%Y-%m-%d")
         }
     })
@@ -307,6 +312,7 @@ def me(request):
                 "role": profile.user_type if profile else "resident",
                 "phone": profile.phone_number if profile and profile.phone_number else "",
                 "unit_number": profile.house_number if profile and profile.house_number else "",
+                "specialty": profile.specialty if profile else "",
                 "joinDate": user_obj.date_joined.strftime("%Y-%m-%d") if user_obj.date_joined else None
             }
         })
@@ -348,6 +354,7 @@ def me(request):
                 "role": profile.user_type if profile else "resident",
                 "phone": profile.phone_number if profile and profile.phone_number else "",
                 "unit_number": profile.house_number if profile and profile.house_number else "",
+                "specialty": profile.specialty if profile else "",
                 "joinDate": user_obj.date_joined.strftime("%Y-%m-%d") if user_obj.date_joined else None
             }
         })
@@ -378,10 +385,15 @@ def maintenance_requests(request):
             for req in queryset:
                 resident_profile = getattr(req.resident, "profile", None)
                 technician_name = "-"
+                technician_phone = ""
+                technician_email = ""
                 if req.assigned_technician:
                     technician_name = f"{req.assigned_technician.first_name} {req.assigned_technician.last_name}".strip()
                     if not technician_name:
                         technician_name = req.assigned_technician.username
+                    tech_profile = getattr(req.assigned_technician, "profile", None)
+                    technician_phone = tech_profile.phone_number if tech_profile and tech_profile.phone_number else ""
+                    technician_email = req.assigned_technician.email or ""
 
                 data.append({
                     "id": req.id,
@@ -393,10 +405,18 @@ def maintenance_requests(request):
                     "location": req.location,
                     "created_at": req.created_at.strftime("%Y-%m-%d"),
                     "technician": technician_name,
+                    "technician_phone": technician_phone,
+                    "technician_email": technician_email,
+                    "technician_id": req.assigned_technician_id,
                     "resident": f"{req.resident.first_name} {req.resident.last_name}".strip() or req.resident.username,
+                    "resident_id": req.resident_id,
                     "unit": resident_profile.house_number if resident_profile and resident_profile.house_number else "",
                     "scheduled_date": req.scheduled_date.strftime("%Y-%m-%d") if req.scheduled_date else None,
                     "scheduled_time": req.scheduled_time.strftime("%H:%M:%S") if req.scheduled_time else None,
+                    "deadline": req.deadline.isoformat() if req.deadline else None,
+                    "materials_used": req.materials_used or "",
+                    "approved_completion": req.approved_completion or "",
+                    "specialty_required": req.specialty_required or "",
                     "images": [img.image.url for img in req.images.all() if img.image]
                 })
 
@@ -491,6 +511,10 @@ def maintenance_request_detail(request, pk):
         "created_at": req.created_at.strftime("%Y-%m-%d"),
         "scheduled_date": req.scheduled_date.strftime("%Y-%m-%d") if req.scheduled_date else None,
         "scheduled_time": req.scheduled_time.strftime("%H:%M:%S") if req.scheduled_time else None,
+        "deadline": req.deadline.isoformat() if req.deadline else None,
+        "materials_used": req.materials_used or "",
+        "approved_completion": req.approved_completion or "",
+        "specialty_required": req.specialty_required or "",
         "technician": technician_name,
         "technician_phone": technician_phone,
         "technician_email": technician_email,
@@ -535,6 +559,9 @@ def my_tasks(request):
                 "status": task.status,
                 "scheduled_date": task.scheduled_date.strftime("%Y-%m-%d") if task.scheduled_date else None,
                 "scheduled_time": task.scheduled_time.strftime("%H:%M:%S") if task.scheduled_time else None,
+                "deadline": task.deadline.isoformat() if task.deadline else None,
+                "materials_used": task.materials_used or "",
+                "specialty_required": task.specialty_required or "",
                 "location": task.location
             })
 
@@ -583,8 +610,11 @@ def task_detail(request, pk):
             "status": task.status,
             "scheduled_date": task.scheduled_date.strftime("%Y-%m-%d") if task.scheduled_date else None,
             "scheduled_time": task.scheduled_time.strftime("%H:%M:%S") if task.scheduled_time else None,
+            "deadline": task.deadline.isoformat() if task.deadline else None,
             "location": task.location,
             "technician_notes": task.technician_notes or "",
+            "materials_used": task.materials_used or "",
+            "specialty_required": task.specialty_required or "",
             "images": [img.image.url for img in task.images.all() if img.image],
         })
 
@@ -592,15 +622,22 @@ def task_detail(request, pk):
         data = request.data
         new_status = data.get("status")
         technician_notes = data.get("technician_notes")
+        materials_used = data.get("materials_used")
 
         if new_status:
             allowed_statuses = ['assigned', 'in-progress', 'completed']
             if new_status not in allowed_statuses:
                 return Response({"error": "Invalid status"}, status=400)
             task.status = new_status
+            # When marking as completed, set approved_completion to pending_approval
+            if new_status == 'completed':
+                task.approved_completion = 'pending_approval'
 
         if technician_notes is not None:
             task.technician_notes = technician_notes
+
+        if materials_used is not None:
+            task.materials_used = materials_used
 
         uploaded_after_images = request.FILES.getlist("after_images")
         for image in uploaded_after_images:
@@ -616,6 +653,7 @@ def task_detail(request, pk):
             "id": task.id,
             "status": task.status,
             "technician_notes": task.technician_notes or "",
+            "materials_used": task.materials_used or "",
         })
 
 
@@ -663,3 +701,288 @@ def logout_view(request):
         "status": "success",
         "message": "Logged out"
     })
+
+
+# =========================================
+# 12. ANNOUNCEMENTS
+# =========================================
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def announcements_view(request):
+    if request.method == 'GET':
+        try:
+            items = Announcement.objects.filter(is_active=True).order_by('-created_at')
+            data = []
+            for a in items:
+                data.append({
+                    "id": a.id,
+                    "title": a.title,
+                    "message": a.message,
+                    "type": a.type,
+                    "priority": a.priority,
+                    "date": a.created_at.strftime("%B %d, %Y"),
+                    "created_at": a.created_at.isoformat(),
+                })
+            return Response(data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    if request.method == 'POST':
+        profile = UserProfile.objects.filter(user=request.user).first()
+        user_role = profile.user_type if profile else "resident"
+        if user_role not in ('officer', 'admin'):
+            return Response({"error": "Only officers or admins can create announcements"}, status=403)
+
+        title = (request.data.get("title") or "").strip()
+        message = (request.data.get("message") or "").strip()
+        ann_type = request.data.get("type", "info")
+        priority = request.data.get("priority", "medium")
+
+        if not title or not message:
+            return Response({"error": "Title and message are required"}, status=400)
+
+        ann = Announcement.objects.create(
+            title=title,
+            message=message,
+            type=ann_type,
+            priority=priority,
+            created_by=request.user,
+        )
+
+        return Response({
+            "message": "Announcement created",
+            "id": ann.id,
+        }, status=201)
+
+
+# =========================================
+# 13. MANAGE REQUEST STATUS (OFFICER)
+# =========================================
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def manage_request_status(request, pk):
+    """Officer can assign technician, set priority, deadline, approve/reject completed work."""
+    profile = UserProfile.objects.filter(user=request.user).first()
+    user_role = profile.user_type if profile else "resident"
+
+    if user_role not in ('officer', 'admin'):
+        return Response({"error": "Only officers or admins can manage requests"}, status=403)
+
+    try:
+        req = MaintenanceRequest.objects.get(pk=pk)
+    except MaintenanceRequest.DoesNotExist:
+        return Response({"error": "Request not found"}, status=404)
+
+    data = request.data
+
+    # Update status
+    new_status = data.get("status")
+    if new_status:
+        valid_statuses = ['pending', 'assigned', 'in-progress', 'completed', 'cancelled']
+        if new_status in valid_statuses:
+            req.status = new_status
+
+    # Update priority
+    new_priority = data.get("priority")
+    if new_priority and new_priority in ('low', 'medium', 'high'):
+        req.priority = new_priority
+
+    # Assign technician
+    technician_id = data.get("technician_id")
+    if technician_id:
+        try:
+            tech_user = User.objects.get(id=technician_id)
+            req.assigned_technician = tech_user
+            if req.status == 'pending':
+                req.status = 'assigned'
+        except User.DoesNotExist:
+            return Response({"error": "Technician not found"}, status=404)
+
+    # Set deadline
+    deadline_str = data.get("deadline")
+    if deadline_str:
+        try:
+            from django.utils.dateparse import parse_datetime
+            parsed = parse_datetime(deadline_str)
+            if parsed:
+                req.deadline = parsed
+        except Exception:
+            pass
+
+    # Set scheduled date/time
+    scheduled_date = data.get("scheduled_date")
+    if scheduled_date:
+        req.scheduled_date = scheduled_date
+
+    scheduled_time = data.get("scheduled_time")
+    if scheduled_time:
+        req.scheduled_time = scheduled_time
+
+    # Approve/reject completed work
+    approved_completion = data.get("approved_completion")
+    if approved_completion and approved_completion in ('pending_approval', 'approved', 'rejected'):
+        req.approved_completion = approved_completion
+        if approved_completion == 'rejected':
+            req.status = 'in-progress'
+
+    req.save()
+
+    return Response({
+        "message": "Request updated successfully",
+        "id": req.id,
+        "status": req.status,
+        "priority": req.priority,
+        "deadline": req.deadline.isoformat() if req.deadline else None,
+        "approved_completion": req.approved_completion,
+    })
+
+
+# =========================================
+# 14. DASHBOARD STATS (OFFICER)
+# =========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def dashboard_stats(request):
+    """Returns computed stats for the officer dashboard."""
+    profile = UserProfile.objects.filter(user=request.user).first()
+    user_role = profile.user_type if profile else "resident"
+
+    if user_role not in ('officer', 'admin'):
+        return Response({"error": "Only officers or admins can access this endpoint"}, status=403)
+
+    now = timezone.now()
+    all_requests = MaintenanceRequest.objects.all()
+
+    total = all_requests.count()
+    pending = all_requests.filter(status='pending').count()
+    assigned = all_requests.filter(status='assigned').count()
+    in_progress = all_requests.filter(status='in-progress').count()
+    completed = all_requests.filter(status='completed').count()
+    cancelled = all_requests.filter(status='cancelled').count()
+
+    # Overdue: has deadline, not completed/cancelled, past deadline
+    overdue = all_requests.filter(
+        deadline__lt=now
+    ).exclude(
+        status__in=['completed', 'cancelled']
+    ).count()
+
+    # Approval stats
+    pending_approval = all_requests.filter(approved_completion='pending_approval').count()
+    approved = all_requests.filter(approved_completion='approved').count()
+    rejected = all_requests.filter(approved_completion='rejected').count()
+
+    return Response({
+        "total": total,
+        "pending": pending,
+        "assigned": assigned,
+        "in_progress": in_progress,
+        "completed": completed,
+        "cancelled": cancelled,
+        "overdue": overdue,
+        "pending_approval": pending_approval,
+        "approved": approved,
+        "rejected": rejected,
+    })
+
+
+# =========================================
+# 15. TECHNICIAN SCHEDULE (OFFICER)
+# =========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def technician_schedule(request):
+    """Returns all technicians with their assigned active tasks."""
+    profile = UserProfile.objects.filter(user=request.user).first()
+    user_role = profile.user_type if profile else "resident"
+
+    if user_role not in ('officer', 'admin'):
+        return Response({"error": "Only officers or admins can access this endpoint"}, status=403)
+
+    technician_profiles = UserProfile.objects.filter(
+        user_type='technician'
+    ).select_related('user')
+
+    data = []
+    for tp in technician_profiles:
+        tech_user = tp.user
+        full_name = f"{tech_user.first_name} {tech_user.last_name}".strip() or tech_user.username
+
+        tasks = MaintenanceRequest.objects.filter(
+            assigned_technician=tech_user
+        ).exclude(
+            status__in=['completed', 'cancelled']
+        ).select_related('resident').order_by('scheduled_date', 'priority')
+
+        task_list = []
+        for t in tasks:
+            resident_profile = getattr(t.resident, "profile", None)
+            resident_name = f"{t.resident.first_name} {t.resident.last_name}".strip() or t.resident.username
+            task_list.append({
+                "id": t.id,
+                "request_code": t.request_code,
+                "category": t.category,
+                "description": t.description,
+                "priority": t.priority,
+                "status": t.status,
+                "location": t.location,
+                "resident": resident_name,
+                "unit": resident_profile.house_number if resident_profile and resident_profile.house_number else "",
+                "scheduled_date": t.scheduled_date.strftime("%Y-%m-%d") if t.scheduled_date else None,
+                "deadline": t.deadline.isoformat() if t.deadline else None,
+            })
+
+        data.append({
+            "id": tech_user.id,
+            "name": full_name,
+            "specialty": tp.specialty or "General",
+            "phone": tp.phone_number or "",
+            "active_tasks": len(task_list),
+            "tasks": task_list,
+        })
+
+    return Response(data)
+
+
+# =========================================
+# 16. LIST TECHNICIANS (FOR ASSIGNMENT)
+# =========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_technicians(request):
+    """Returns list of all technicians with their current task counts."""
+    profile = UserProfile.objects.filter(user=request.user).first()
+    user_role = profile.user_type if profile else "resident"
+
+    if user_role not in ('officer', 'admin'):
+        return Response({"error": "Only officers or admins can access this"}, status=403)
+
+    technician_profiles = UserProfile.objects.filter(
+        user_type='technician'
+    ).select_related('user')
+
+    data = []
+    for tp in technician_profiles:
+        tech_user = tp.user
+        full_name = f"{tech_user.first_name} {tech_user.last_name}".strip() or tech_user.username
+
+        active_count = MaintenanceRequest.objects.filter(
+            assigned_technician=tech_user
+        ).exclude(status__in=['completed', 'cancelled']).count()
+
+        completed_count = MaintenanceRequest.objects.filter(
+            assigned_technician=tech_user,
+            status='completed'
+        ).count()
+
+        data.append({
+            "id": tech_user.id,
+            "name": full_name,
+            "specialty": tp.specialty or "General",
+            "phone": tp.phone_number or "",
+            "email": tech_user.email or "",
+            "active_tasks": active_count,
+            "completed_tasks": completed_count,
+        })
+
+    return Response(data)
