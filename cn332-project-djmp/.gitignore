@@ -201,6 +201,12 @@ node_modules/
 dist/
 build/
 
+
+# Generated assets (do not commit build JS/CSS)
+
+assets/*.js
+assets/*.css
+
 # Vite files
 
 .vite/
