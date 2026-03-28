@@ -204,7 +204,7 @@ build/
 
 # Generated assets (do not commit build JS/CSS)
 
-assets/*.js
+cn332-project-djmp/backend/static/frontend/assets/*.js
 assets/*.css
 
 # Vite files
