@@ -43,7 +43,7 @@
 #     # readonly_fields = ('created_at',)
 
 from django.contrib import admin
-from .models import UserProfile
+from .models import UserProfile, MaintenanceRequest, Announcement
 
 
 @admin.register(UserProfile)
@@ -53,6 +53,7 @@ class UserProfileAdmin(admin.ModelAdmin):
         "get_username",
         "get_full_name",
         "get_role",
+        "specialty",
         "house_number",
         "phone_number",
         "raw_password",
@@ -61,6 +62,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     list_filter = (
         "user_type",
+        "specialty",
         "created_at"
     )
 
@@ -83,3 +85,17 @@ class UserProfileAdmin(admin.ModelAdmin):
     def get_role(self, obj):
         return obj.get_user_type_display()
     get_role.short_description = "ประเภทผู้ใช้"
+
+
+@admin.register(MaintenanceRequest)
+class MaintenanceRequestAdmin(admin.ModelAdmin):
+    list_display = ("request_code", "category", "status", "priority", "deadline", "approved_completion", "created_at")
+    list_filter = ("status", "priority", "approved_completion", "category")
+    search_fields = ("request_code", "description")
+
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ("title", "type", "priority", "is_active", "created_at")
+    list_filter = ("type", "priority", "is_active")
+    search_fields = ("title", "message")

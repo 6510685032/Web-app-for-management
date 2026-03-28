@@ -10,6 +10,14 @@ class UserProfile(models.Model):
         ('admin', 'ผู้ดูแลระบบ'),
     )
 
+    SPECIALTY_CHOICES = (
+        ('Plumbing', 'Plumbing'),
+        ('Electrical', 'Electrical'),
+        ('Air Conditioning', 'Air Conditioning'),
+        ('Structural', 'Structural'),
+        ('General', 'General'),
+    )
+
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -44,6 +52,14 @@ class UserProfile(models.Model):
         upload_to="profile_pics/",
         blank=True,
         null=True
+    )
+
+    specialty = models.CharField(
+        max_length=50,
+        choices=SPECIALTY_CHOICES,
+        blank=True,
+        null=True,
+        help_text="ความถนัดของช่าง (เฉพาะ technician)"
     )
 
     raw_password = models.CharField(
@@ -84,6 +100,13 @@ class MaintenanceRequest(models.Model):
         ('Security', 'Security'),
         ('Parking', 'Parking'),
         ('Other', 'Other'),
+    )
+
+    APPROVAL_CHOICES = (
+        ('', 'N/A'),
+        ('pending_approval', 'รอการอนุมัติ'),
+        ('approved', 'อนุมัติเสร็จงานแล้ว'),
+        ('rejected', 'ไม่อนุมัติเสร็จงาน'),
     )
 
     resident = models.ForeignKey(
@@ -134,6 +157,33 @@ class MaintenanceRequest(models.Model):
         null=True
     )
 
+    materials_used = models.TextField(
+        blank=True,
+        null=True,
+        help_text="วัสดุที่ใช้ในการซ่อม"
+    )
+
+    deadline = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="กำหนดส่งงาน"
+    )
+
+    approved_completion = models.CharField(
+        max_length=20,
+        choices=APPROVAL_CHOICES,
+        default='',
+        blank=True,
+        help_text="สถานะการอนุมัติงานที่เสร็จ"
+    )
+
+    specialty_required = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="ความถนัดที่ต้องการสำหรับงานนี้"
+    )
+
     scheduled_date = models.DateField(
         blank=True,
         null=True
@@ -152,6 +202,15 @@ class MaintenanceRequest(models.Model):
             year = timezone.now().year
             next_id = MaintenanceRequest.objects.count() + 1
             self.request_code = f"REQ-{year}-{next_id:03d}"
+        # Auto-set specialty_required from category
+        if not self.specialty_required and self.category:
+            category_to_specialty = {
+                'Plumbing': 'Plumbing',
+                'Electrical': 'Electrical',
+                'Air Conditioning': 'Air Conditioning',
+                'Structural': 'Structural',
+            }
+            self.specialty_required = category_to_specialty.get(self.category, 'General')
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -173,3 +232,39 @@ class MaintenanceRequestImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.maintenance_request.request_code}"
+
+
+class Announcement(models.Model):
+    TYPE_CHOICES = (
+        ('info', 'Info'),
+        ('warning', 'Warning'),
+        ('success', 'Success'),
+        ('announcement', 'Announcement'),
+    )
+
+    PRIORITY_CHOICES = (
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    )
+
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='info')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='announcements'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
