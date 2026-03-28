@@ -7,11 +7,13 @@ import ResidentHome from './ResidentHome';
 import MaintenanceRequestForm from './MaintenanceRequestForm';
 import RequestTracking from './RequestTracking';
 import RequestDetail from './RequestDetail';
+import api from '../../utils/api';
 
 export default function ResidentDashboard() {
   const { user } = useUser();
   const navigate = useNavigate();
-  const [showAnnouncement, setShowAnnouncement] = useState(true);
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || user.role !== 'resident') {
@@ -19,40 +21,27 @@ export default function ResidentDashboard() {
     }
   }, [user, navigate]);
 
-  const announcements = [
-    {
-      id: '1',
-      title: 'Pool Maintenance Notice',
-      message:
-        'The swimming pool will be closed for maintenance on February 5-6, 2026. We apologize for any inconvenience.',
-      type: 'info' as const,
-      date: 'January 30, 2026',
-      priority: 'medium' as const,
-    },
-    {
-      id: '2',
-      title: 'Road Closure Alert',
-      message:
-        'Main entrance road will be partially closed on February 1, 2026 from 9:00 AM to 3:00 PM for repairs. Please use the alternative entrance.',
-      type: 'warning' as const,
-      date: 'January 29, 2026',
-      priority: 'high' as const,
-    },
-    {
-      id: '3',
-      title: 'Community Meeting',
-      message:
-        'Monthly community meeting scheduled for February 10, 2026 at 7:00 PM in the community hall. All residents are welcome to attend.',
-      type: 'announcement' as const,
-      date: 'January 28, 2026',
-      priority: 'low' as const,
-    },
-  ];
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await api.get('/announcements/');
+        const data = Array.isArray(response.data) ? response.data : [];
+        if (data.length > 0) {
+          setAnnouncements(data);
+          setShowAnnouncement(true);
+        }
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
+      }
+    };
+
+    fetchAnnouncements();
+  }, []);
 
   return (
     <div className="min-h-screen bg-blue-50">
       <TopNavigation />
-      {showAnnouncement && (
+      {showAnnouncement && announcements.length > 0 && (
         <AnnouncementModal announcements={announcements} onClose={() => setShowAnnouncement(false)} />
       )}
       <Routes>
