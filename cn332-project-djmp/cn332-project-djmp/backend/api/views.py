@@ -1,12 +1,50 @@
+from django.contrib.auth import authenticate, logout
+from django.contrib.auth.models import User
+from django.db import IntegrityError, transaction
+
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, logout
-
 from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage
+
+
+N8N_SECRET_TOKEN = "a21a47ce027fa1bbbd180291ad3a7898a3e7e5261b8a38a562b17d3cac663caf"
+ALLOWED_ROLES = {"resident", "officer", "technician", "admin"}
+
+
+def split_full_name(name: str):
+    name = (name or "").strip()
+    if not name:
+        return "", ""
+
+    parts = name.split()
+    first_name = parts[0]
+    last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
+    return first_name, last_name
+
+
+def generate_unique_username(base_username: str) -> str:
+    base_username = (base_username or "").strip().lower()
+
+    if not base_username:
+        base_username = "user"
+
+    username = base_username
+    counter = 1
+
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}_{counter}"
+        counter += 1
+
+    return username
+
+
+def get_or_create_profile(user_obj: User):
+    profile, _ = UserProfile.objects.get_or_create(user=user_obj)
+    return profile
 
 
 # =========================================
@@ -38,55 +76,55 @@ def manage_users(request):
             return Response(data)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     if request.method == 'POST':
         data = request.data
-        email = (data.get("email") or "").strip()
+        email = (data.get("email") or "").strip().lower()
         password = data.get("password")
         name = (data.get("name") or "").strip()
 
         if not email or not password:
-            return Response({"error": "Email and password required"}, status=400)
-
-        if User.objects.filter(email__iexact=email).exists():
-            return Response({"error": "Email already exists"}, status=400)
-
-        name_parts = name.split(" ")
-        first_name = name_parts[0] if len(name_parts) > 0 else ""
-        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
-
-        base_username = email.split("@")[0].strip().lower()
-        username = base_username
-        counter = 1
-
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-
-        try:
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first_name,
-                last_name=last_name
+            return Response(
+                {"error": "Email and password required"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-            profile = user.profile
-            profile.user_type = data.get("role", "resident")
-            profile.phone_number = data.get("phone", "")
-            profile.house_number = data.get("unit_number", "")
-            profile.address = data.get("address")
-            profile.save()
+        if User.objects.filter(email__iexact=email).exists():
+            return Response(
+                {"error": "Email already exists"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        first_name, last_name = split_full_name(name)
+
+        base_username = email.split("@")[0].strip().lower() if "@" in email else email
+        username = generate_unique_username(base_username)
+
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name
+                )
+
+                profile = get_or_create_profile(user)
+                profile.user_type = data.get("role", "resident")
+                profile.phone_number = data.get("phone", "")
+                profile.house_number = data.get("unit_number", "")
+                profile.address = data.get("address") or ""
+                profile.save()
 
             return Response({
                 "message": "User created",
                 "id": user.id
-            }, status=201)
+            }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # =========================================
@@ -99,24 +137,27 @@ def user_detail(request, pk):
         user_obj = User.objects.get(id=pk)
         profile = UserProfile.objects.get(user=user_obj)
     except User.DoesNotExist:
-        return Response({"error": "User not found"}, status=404)
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
     except UserProfile.DoesNotExist:
-        return Response({"error": "Profile not found"}, status=404)
+        return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "PUT":
         data = request.data
 
-        new_email = data.get("email", user_obj.email)
-        if new_email and new_email.lower() != (user_obj.email or "").lower():
+        new_email = (data.get("email") or user_obj.email or "").strip().lower()
+        if new_email and new_email != (user_obj.email or "").lower():
             if User.objects.filter(email__iexact=new_email).exclude(id=user_obj.id).exists():
-                return Response({"error": "Email already exists"}, status=400)
+                return Response(
+                    {"error": "Email already exists"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             user_obj.email = new_email
 
         name = (data.get("name") or "").strip()
         if name:
-            name_parts = name.split(" ")
-            user_obj.first_name = name_parts[0]
-            user_obj.last_name = " ".join(name_parts[1:])
+            first_name, last_name = split_full_name(name)
+            user_obj.first_name = first_name
+            user_obj.last_name = last_name
 
         new_password = data.get("password")
         if new_password:
@@ -138,106 +179,164 @@ def user_detail(request, pk):
 
 
 # =========================================
-# 3. CREATE USER FROM N8N
+# 3. CREATE OR UPDATE USER FROM N8N
 # =========================================
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def create_user_from_n8n(request):
     secret_token = request.headers.get("X-N8N-TOKEN")
-    if secret_token != "a21a47ce027fa1bbbd180291ad3a7898a3e7e5261b8a38a562b17d3cac663caf":
-        return Response({"error": "Unauthorized"}, status=401)
+    if secret_token != N8N_SECRET_TOKEN:
+        return Response({"error": "Unauthorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
     data = request.data
-    password = data.get("password")
+
+    password = (data.get("password") or "").strip()
     user_type = (data.get("user_type") or "").strip().lower()
     email = (data.get("email") or "").strip().lower()
+    incoming_username = (data.get("username") or "").strip().lower()
 
-    allowed_roles = {"resident", "officer", "technician", "admin"}
+    first_name = (data.get("first_name") or "").strip()
+    last_name = (data.get("last_name") or "").strip()
+    phone_number = (data.get("phone_number") or "").strip()
+    house_number = (data.get("house_number") or "").strip()
+    address = (data.get("address") or "").strip()
 
-    if not password or not user_type or not email:
-        return Response({"error": "Email, password and user_type are required"}, status=400)
-
-    if user_type not in allowed_roles:
-        return Response({"error": "Invalid user_type"}, status=400)
-
-    first_name = data.get("first_name", "")
-    last_name = data.get("last_name", "")
-    phone_number = data.get("phone_number", "")
-    house_number = data.get("house_number") or ""
-    address = data.get("address")
-
-    existing_user = User.objects.filter(email__iexact=email).first()
-
-    # ถ้ามี email นี้อยู่แล้ว -> ไม่สร้างใหม่ แต่ update ข้อมูลเดิม
-    if existing_user:
-        existing_user.first_name = first_name
-        existing_user.last_name = last_name
-        existing_user.email = email
-        existing_user.set_password(password)
-        existing_user.save()
-
-        profile, _ = UserProfile.objects.get_or_create(user=existing_user)
-        profile.user_type = user_type
-        profile.phone_number = phone_number
-        profile.house_number = house_number
-        profile.address = address
-        profile.raw_password = password
-        profile.save()
-
-        profile.refresh_from_db()
-
-        return Response({
-            "message": "Existing user updated",
-            "id": existing_user.id,
-            "username": existing_user.username,
-            "role": profile.user_type,
-            "email": existing_user.email,
-            "raw_password": profile.raw_password,
-            "created": False,
-            "updated": True
-        }, status=200)
-
-    # ถ้ายังไม่มี -> สร้างใหม่
-    base_username = f"{user_type}_{User.objects.count() + 1}"
-    username = base_username
-    counter = 1
-
-    while User.objects.filter(username=username).exists():
-        username = f"{base_username}_{counter}"
-        counter += 1
-
-    try:
-        user = User.objects.create_user(
-            username=username,
-            password=password,
-            first_name=first_name,
-            last_name=last_name,
-            email=email
+    if not password or not user_type:
+        return Response(
+            {"error": "password and user_type are required"},
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        profile = user.profile
-        profile.user_type = user_type
-        profile.phone_number = phone_number
-        profile.house_number = house_number
-        profile.address = address
-        profile.raw_password = password
-        profile.save()
+    if user_type not in ALLOWED_ROLES:
+        return Response(
+            {"error": "Invalid user_type"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-        profile.refresh_from_db()
+    existing_user = None
+
+    # 1) หา user เดิมจาก email ก่อน
+    if email:
+        existing_user = User.objects.filter(email__iexact=email).first()
+
+    # 2) ถ้ายังไม่เจอ ลองหาจาก username ที่ n8n ส่งมา
+    if not existing_user and incoming_username:
+        existing_user = User.objects.filter(username__iexact=incoming_username).first()
+
+    # 3) ถ้ายังไม่เจอ และเป็น resident ลองหาจาก house_number
+    if not existing_user and user_type == "resident" and house_number:
+        existing_profile = (
+            UserProfile.objects
+            .select_related("user")
+            .filter(user_type="resident", house_number=house_number)
+            .first()
+        )
+        if existing_profile:
+            existing_user = existing_profile.user
+
+    # -----------------------------
+    # UPDATE USER เดิม
+    # -----------------------------
+    if existing_user:
+        try:
+            with transaction.atomic():
+                if email:
+                    email_owner = User.objects.filter(email__iexact=email).exclude(id=existing_user.id).first()
+                    if email_owner:
+                        return Response(
+                            {"error": f"Email '{email}' already belongs to another user"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    existing_user.email = email
+
+                if incoming_username and incoming_username != (existing_user.username or "").lower():
+                    username_owner = User.objects.filter(username__iexact=incoming_username).exclude(id=existing_user.id).first()
+                    if username_owner:
+                        return Response(
+                            {"error": f"Username '{incoming_username}' already belongs to another user"},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    existing_user.username = incoming_username
+
+                existing_user.first_name = first_name
+                existing_user.last_name = last_name
+                existing_user.set_password(password)
+                existing_user.save()
+
+                profile = get_or_create_profile(existing_user)
+                profile.user_type = user_type
+                profile.phone_number = phone_number
+                profile.house_number = house_number
+                profile.address = address
+                profile.raw_password = password
+                profile.save()
+
+            return Response({
+                "message": "Existing user updated",
+                "id": existing_user.id,
+                "username": existing_user.username,
+                "role": profile.user_type,
+                "email": existing_user.email,
+                "raw_password": profile.raw_password,
+                "created": False,
+                "updated": True
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # -----------------------------
+    # CREATE USER ใหม่
+    # -----------------------------
+    if incoming_username:
+        base_username = incoming_username
+    elif email:
+        base_username = email.split("@")[0]
+    elif house_number:
+        base_username = f"{user_type}_{house_number}"
+    else:
+        base_username = user_type
+
+    username = generate_unique_username(base_username)
+
+    try:
+        with transaction.atomic():
+            user = User.objects.create_user(
+                username=username,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email if email else ""
+            )
+
+            profile = get_or_create_profile(user)
+            profile.user_type = user_type
+            profile.phone_number = phone_number
+            profile.house_number = house_number
+            profile.address = address
+            profile.raw_password = password
+            profile.save()
 
         return Response({
             "message": "User created",
             "id": user.id,
-            "username": username,
-            "role": user_type,
-            "email": email,
+            "username": user.username,
+            "role": profile.user_type,
+            "email": user.email,
             "raw_password": profile.raw_password,
             "created": True,
             "updated": False
-        }, status=201)
+        }, status=status.HTTP_201_CREATED)
+
+    except IntegrityError as e:
+        return Response({
+            "error": "Failed to create user because username or email already exists",
+            "detail": str(e)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 # =========================================
 # 4. LOGIN
@@ -251,7 +350,7 @@ def login_view(request):
     if not identifier or not password:
         return Response({
             "message": "Username/email and password are required"
-        }, status=400)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     user_obj = authenticate(username=identifier, password=password)
 
@@ -263,7 +362,7 @@ def login_view(request):
     if not user_obj:
         return Response({
             "message": "Invalid username, email, or password"
-        }, status=400)
+        }, status=status.HTTP_400_BAD_REQUEST)
 
     profile = UserProfile.objects.filter(user_id=user_obj.id).first()
 
@@ -316,15 +415,18 @@ def me(request):
 
         name = (data.get("name") or "").strip()
         if name:
-            name_parts = name.split(" ")
-            user_obj.first_name = name_parts[0]
-            user_obj.last_name = " ".join(name_parts[1:])
+            first_name, last_name = split_full_name(name)
+            user_obj.first_name = first_name
+            user_obj.last_name = last_name
 
         if "email" in data:
-            new_email = (data.get("email") or "").strip()
-            if new_email and new_email.lower() != (user_obj.email or "").lower():
+            new_email = (data.get("email") or "").strip().lower()
+            if new_email and new_email != (user_obj.email or "").lower():
                 if User.objects.filter(email__iexact=new_email).exclude(id=user_obj.id).exists():
-                    return Response({"error": "Email already exists"}, status=400)
+                    return Response(
+                        {"error": "Email already exists"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 user_obj.email = new_email
 
         user_obj.save()
@@ -366,17 +468,25 @@ def maintenance_requests(request):
     if request.method == 'GET':
         try:
             if user_role == 'resident':
-                queryset = MaintenanceRequest.objects.filter(
-                    resident=user_obj
-                ).select_related('resident', 'assigned_technician').prefetch_related('images').order_by('-created_at')
+                queryset = (
+                    MaintenanceRequest.objects
+                    .filter(resident=user_obj)
+                    .select_related('resident', 'assigned_technician')
+                    .prefetch_related('images')
+                    .order_by('-created_at')
+                )
             else:
-                queryset = MaintenanceRequest.objects.select_related(
-                    'resident', 'assigned_technician'
-                ).prefetch_related('images').order_by('-created_at')
+                queryset = (
+                    MaintenanceRequest.objects
+                    .select_related('resident', 'assigned_technician')
+                    .prefetch_related('images')
+                    .order_by('-created_at')
+                )
 
             data = []
             for req in queryset:
                 resident_profile = getattr(req.resident, "profile", None)
+
                 technician_name = "-"
                 if req.assigned_technician:
                     technician_name = f"{req.assigned_technician.first_name} {req.assigned_technician.last_name}".strip()
@@ -403,11 +513,14 @@ def maintenance_requests(request):
             return Response(data)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     if request.method == 'POST':
         if user_role != 'resident':
-            return Response({"error": "Only residents can create maintenance requests"}, status=403)
+            return Response(
+                {"error": "Only residents can create maintenance requests"},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         try:
             category = request.data.get("category")
@@ -416,7 +529,10 @@ def maintenance_requests(request):
             priority = request.data.get("priority", "medium")
 
             if not category or not location or not description:
-                return Response({"error": "Category, location and description are required"}, status=400)
+                return Response(
+                    {"error": "Category, location and description are required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             maintenance_request = MaintenanceRequest.objects.create(
                 resident=user_obj,
@@ -441,10 +557,10 @@ def maintenance_requests(request):
                     "request_code": maintenance_request.request_code,
                     "status": maintenance_request.status
                 }
-            }, status=201)
+            }, status=status.HTTP_201_CREATED)
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # =========================================
@@ -458,14 +574,20 @@ def maintenance_request_detail(request, pk):
     user_role = profile.user_type if profile else "resident"
 
     try:
-        req = MaintenanceRequest.objects.select_related(
-            'resident', 'assigned_technician'
-        ).prefetch_related('images').get(pk=pk)
+        req = (
+            MaintenanceRequest.objects
+            .select_related('resident', 'assigned_technician')
+            .prefetch_related('images')
+            .get(pk=pk)
+        )
     except MaintenanceRequest.DoesNotExist:
-        return Response({"error": "Request not found"}, status=404)
+        return Response({"error": "Request not found"}, status=status.HTTP_404_NOT_FOUND)
 
     if user_role == 'resident' and req.resident_id != user_obj.id:
-        return Response({"error": "You do not have permission to view this request"}, status=403)
+        return Response(
+            {"error": "You do not have permission to view this request"},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     technician_name = "-"
     technician_phone = ""
@@ -509,12 +631,18 @@ def my_tasks(request):
     user_role = profile.user_type if profile else "resident"
 
     if user_role != 'technician':
-        return Response({"error": "Only technicians can access this endpoint"}, status=403)
+        return Response(
+            {"error": "Only technicians can access this endpoint"},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     try:
-        tasks = MaintenanceRequest.objects.filter(
-            assigned_technician=user_obj
-        ).select_related('resident', 'assigned_technician').order_by('-created_at')
+        tasks = (
+            MaintenanceRequest.objects
+            .filter(assigned_technician=user_obj)
+            .select_related('resident', 'assigned_technician')
+            .order_by('-created_at')
+        )
 
         data = []
         for task in tasks:
@@ -541,7 +669,7 @@ def my_tasks(request):
         return Response(data)
 
     except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # =========================================
@@ -555,14 +683,20 @@ def task_detail(request, pk):
     user_role = profile.user_type if profile else "resident"
 
     if user_role != 'technician':
-        return Response({"error": "Only technicians can access this endpoint"}, status=403)
+        return Response(
+            {"error": "Only technicians can access this endpoint"},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     try:
-        task = MaintenanceRequest.objects.select_related(
-            'resident', 'assigned_technician'
-        ).prefetch_related('images').get(pk=pk, assigned_technician=user_obj)
+        task = (
+            MaintenanceRequest.objects
+            .select_related('resident', 'assigned_technician')
+            .prefetch_related('images')
+            .get(pk=pk, assigned_technician=user_obj)
+        )
     except MaintenanceRequest.DoesNotExist:
-        return Response({"error": "Task not found"}, status=404)
+        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     resident_profile = getattr(task.resident, "profile", None)
     resident_name = f"{task.resident.first_name} {task.resident.last_name}".strip()
@@ -596,7 +730,7 @@ def task_detail(request, pk):
         if new_status:
             allowed_statuses = ['assigned', 'in-progress', 'completed']
             if new_status not in allowed_statuses:
-                return Response({"error": "Invalid status"}, status=400)
+                return Response({"error": "Invalid status"}, status=status.HTTP_400_BAD_REQUEST)
             task.status = new_status
 
         if technician_notes is not None:
@@ -630,25 +764,31 @@ def request_task_extension(request, pk):
     user_role = profile.user_type if profile else "resident"
 
     if user_role != 'technician':
-        return Response({"error": "Only technicians can access this endpoint"}, status=403)
+        return Response(
+            {"error": "Only technicians can access this endpoint"},
+            status=status.HTTP_403_FORBIDDEN
+        )
 
     try:
         task = MaintenanceRequest.objects.get(pk=pk, assigned_technician=user_obj)
     except MaintenanceRequest.DoesNotExist:
-        return Response({"error": "Task not found"}, status=404)
+        return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
     days = request.data.get("days")
     reason = (request.data.get("reason") or "").strip()
 
     if not days or not reason:
-        return Response({"error": "Days and reason are required"}, status=400)
+        return Response(
+            {"error": "Days and reason are required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     return Response({
         "message": "Extension request submitted successfully",
         "task_id": task.id,
         "days": days,
         "reason": reason,
-    }, status=201)
+    }, status=status.HTTP_201_CREATED)
 
 
 # =========================================
