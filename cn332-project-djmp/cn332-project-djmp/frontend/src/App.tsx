@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginPage from "./components/auth/LoginPage";
 import ProfilePage from "./components/shared/ProfilePage";
 import ProtectedRoute from "./components/shared/ProtectedRoute";
+import SettingsPage from "./components/shared/SettingsPage";
 
 import { UserProvider } from "./context/UserContext";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -73,6 +74,17 @@ export default function App() {
                     allowedRoles={["resident", "officer", "technician", "admin"]}
                   >
                     <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={["resident", "officer", "technician", "admin"]}
+                  >
+                    <SettingsPage />
                   </ProtectedRoute>
                 }
               />
