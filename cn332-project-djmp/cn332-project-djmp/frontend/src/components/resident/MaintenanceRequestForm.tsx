@@ -49,7 +49,12 @@ export default function MaintenanceRequestForm() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newImages = Array.from(e.target.files);
+      const newImages = Array.from(e.target.files).filter((file) =>
+        file.type.startsWith('image/')
+      );
+      if (newImages.length < (e.target.files?.length || 0)) {
+        alert('Only image files (PNG, JPG, GIF, WEBP) are allowed.');
+      }
       setImages((prev) => [...prev, ...newImages]);
     }
   };
@@ -238,7 +243,7 @@ export default function MaintenanceRequestForm() {
               <input
                 type="file"
                 id="image-upload"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/gif,image/webp"
                 multiple
                 onChange={handleImageUpload}
                 className="hidden"
@@ -247,7 +252,7 @@ export default function MaintenanceRequestForm() {
               <label htmlFor="image-upload" className="cursor-pointer">
                 <Upload className="w-12 h-12 text-blue-400 mx-auto mb-3" />
                 <p className="text-blue-700 font-medium mb-1">Click to upload images</p>
-                <p className="text-sm text-blue-500">PNG, JPG up to 10MB each</p>
+                <p className="text-sm text-blue-500">PNG, JPG, GIF, WEBP up to 10MB each</p>
               </label>
             </div>
 

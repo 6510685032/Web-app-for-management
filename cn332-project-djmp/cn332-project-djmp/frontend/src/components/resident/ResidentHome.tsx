@@ -121,39 +121,39 @@ export default function ResidentHome() {
       <div className="grid md:grid-cols-2 gap-4 mb-8">
         <button
           onClick={() => navigate('/resident/new-request')}
-          className="bg-blue-600 text-white p-6 rounded-xl hover:bg-blue-700 transition-colors shadow-lg group"
+          className="bg-blue-600 text-white p-6 rounded-xl hover:bg-blue-700 transition-colors shadow-lg group overflow-hidden"
         >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <h3 className="text-xl font-semibold mb-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-left min-w-0">
+              <h3 className="text-xl font-semibold mb-2 truncate">
                 New Maintenance Request
               </h3>
 
-              <p className="text-blue-100">
+              <p className="text-blue-100 truncate">
                 Submit a new maintenance or repair request
               </p>
             </div>
 
-            <Plus className="w-12 h-12 group-hover:scale-110 transition-transform" />
+            <Plus className="w-12 h-12 flex-shrink-0 group-hover:scale-110 transition-transform" />
           </div>
         </button>
 
         <button
           onClick={() => navigate('/resident/requests')}
-          className="bg-white p-6 rounded-xl hover:bg-blue-50 transition-colors shadow-lg border border-blue-100 group"
+          className="bg-white p-6 rounded-xl hover:bg-blue-50 transition-colors shadow-lg border border-blue-100 group overflow-hidden"
         >
-          <div className="flex items-center justify-between">
-            <div className="text-left">
-              <h3 className="text-xl font-semibold text-blue-900 mb-2">
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-left min-w-0">
+              <h3 className="text-xl font-semibold text-blue-900 mb-2 truncate">
                 Track My Requests
               </h3>
 
-              <p className="text-blue-600">
+              <p className="text-blue-600 truncate">
                 View all your maintenance requests
               </p>
             </div>
 
-            <FileText className="w-12 h-12 text-blue-600 group-hover:scale-110 transition-transform" />
+            <FileText className="w-12 h-12 text-blue-600 flex-shrink-0 group-hover:scale-110 transition-transform" />
           </div>
         </button>
       </div>
@@ -169,15 +169,15 @@ export default function ResidentHome() {
               key={stat.label}
               className="bg-white p-6 rounded-xl shadow-lg border border-blue-100"
             >
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mb-4`}>
-                <Icon className="w-6 h-6 text-white" />
+              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mb-4 flex-shrink-0`}>
+                <Icon className="w-6 h-6 text-white flex-shrink-0" />
               </div>
 
-              <p className="text-3xl font-bold text-blue-900 mb-1">
+              <p className="text-3xl font-bold text-blue-900 mb-1 truncate">
                 {loading ? '-' : stat.value}
               </p>
 
-              <p className="text-sm text-blue-600">
+              <p className="text-sm text-blue-600 truncate">
                 {stat.label}
               </p>
             </div>

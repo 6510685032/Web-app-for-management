@@ -1,7 +1,7 @@
 import React from 'react';
-import { Clock, CheckCircle, AlertCircle, XCircle, PlayCircle, FileText } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, XCircle, PlayCircle, FileText, ShieldCheck, ShieldX } from 'lucide-react';
 
-export type Status = 'pending' | 'in-progress' | 'completed' | 'overdue' | 'cancelled' | 'submitted' | 'reviewed' | 'assigned';
+export type Status = 'pending' | 'in-progress' | 'completed' | 'overdue' | 'cancelled' | 'submitted' | 'reviewed' | 'assigned' | 'pending_approval' | 'approved' | 'rejected';
 
 interface StatusBadgeProps {
   status: Status;
@@ -59,6 +59,24 @@ export default function StatusBadge({ status, showIcon = true, size = 'md' }: St
           label: 'Cancelled',
           color: 'bg-gray-100 text-gray-700 border-gray-200',
           icon: XCircle,
+        };
+      case 'pending_approval':
+        return {
+          label: 'รออนุมัติ',
+          color: 'bg-orange-100 text-orange-700 border-orange-200',
+          icon: Clock,
+        };
+      case 'approved':
+        return {
+          label: 'อนุมัติแล้ว',
+          color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+          icon: ShieldCheck,
+        };
+      case 'rejected':
+        return {
+          label: 'ไม่อนุมัติ',
+          color: 'bg-red-100 text-red-700 border-red-200',
+          icon: ShieldX,
         };
       default:
         return {

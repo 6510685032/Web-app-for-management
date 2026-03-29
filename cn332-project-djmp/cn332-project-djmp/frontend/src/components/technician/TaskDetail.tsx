@@ -10,6 +10,8 @@ import {
   X,
   CheckCircle,
   Mail,
+  Timer,
+  Package,
 } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
@@ -27,9 +29,69 @@ interface TaskDetailData {
   status: string;
   scheduled_date?: string | null;
   scheduled_time?: string | null;
+  deadline?: string | null;
   location?: string;
   images?: string[];
   technician_notes?: string;
+  materials_used?: string;
+}
+
+function DeadlineTimer({ deadline }: { deadline: string }) {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const deadlineDate = new Date(deadline);
+  const diff = deadlineDate.getTime() - now.getTime();
+  const isOverdue = diff < 0;
+  const absDiff = Math.abs(diff);
+
+  const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((absDiff / (1000 * 60 * 60)) % 24);
+  const minutes = Math.floor((absDiff / (1000 * 60)) % 60);
+  const seconds = Math.floor((absDiff / 1000) % 60);
+
+  if (isOverdue) {
+    return (
+      <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 mb-6 animate-pulse">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center">
+            <Timer className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <p className="text-red-800 font-bold text-lg">⚠️ OVERDUE</p>
+            <p className="text-red-700 text-xl font-mono font-bold">
+              +{days > 0 ? `${days}d ` : ''}{String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const urgencyBg = days < 1 ? 'bg-red-50 border-red-300' : days < 3 ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300';
+  const urgencyText = days < 1 ? 'text-red-800' : days < 3 ? 'text-yellow-800' : 'text-green-800';
+  const urgencyMono = days < 1 ? 'text-red-700' : days < 3 ? 'text-yellow-700' : 'text-green-700';
+  const urgencyIcon = days < 1 ? 'bg-red-500' : days < 3 ? 'bg-yellow-500' : 'bg-green-500';
+
+  return (
+    <div className={`${urgencyBg} border-2 rounded-xl p-4 mb-6`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-12 h-12 ${urgencyIcon} rounded-full flex items-center justify-center`}>
+          <Timer className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <p className={`${urgencyText} font-bold text-sm`}>Time Remaining</p>
+          <p className={`${urgencyMono} text-xl font-mono font-bold`}>
+            {days > 0 ? `${days}d ` : ''}{String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function TaskDetail() {
@@ -47,6 +109,7 @@ export default function TaskDetail() {
   const [extensionDays, setExtensionDays] = useState('2');
   const [extensionReason, setExtensionReason] = useState('');
   const [notes, setNotes] = useState('');
+  const [materialsUsed, setMaterialsUsed] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -66,11 +129,10 @@ export default function TaskDetail() {
         setTask(data);
         setTaskStatus(data.status || '');
         setNotes(data.technician_notes || '');
+        setMaterialsUsed(data.materials_used || '');
       } catch (error: any) {
         console.error('Error fetching task detail:', error);
-        setErrorMessage(
-          error?.response?.data?.error || 'ไม่สามารถโหลดรายละเอียดงานได้'
-        );
+        setErrorMessage(error?.response?.data?.error || 'ไม่สามารถโหลดรายละเอียดงานได้');
       } finally {
         setLoading(false);
       }
@@ -81,12 +143,7 @@ export default function TaskDetail() {
 
   const residentInitials = useMemo(() => {
     if (!task?.resident) return 'R';
-    return task.resident
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .substring(0, 2)
-      .toUpperCase();
+    return task.resident.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
   }, [task]);
 
   const afterImagePreviews = useMemo(
@@ -107,13 +164,9 @@ export default function TaskDetail() {
 
   const handleStartTask = async () => {
     if (!task) return;
-
     setSubmitting(true);
     try {
-      const response = await api.patch(`/tasks/${task.id}/`, {
-        status: 'in-progress',
-      });
-
+      const response = await api.patch(`/tasks/${task.id}/`, { status: 'in-progress' });
       setTask((prev) => (prev ? { ...prev, status: response.data.status || 'in-progress' } : prev));
       setTaskStatus(response.data.status || 'in-progress');
     } catch (error: any) {
@@ -126,27 +179,24 @@ export default function TaskDetail() {
 
   const handleCompleteTask = async () => {
     if (!task) return;
-
     if (afterImages.length === 0) {
       alert('Please upload at least one after image');
       return;
     }
 
     setSubmitting(true);
-
     try {
       const payload = new FormData();
       payload.append('status', 'completed');
       payload.append('technician_notes', notes);
+      payload.append('materials_used', materialsUsed);
 
       afterImages.forEach((image) => {
         payload.append('after_images', image);
       });
 
       const response = await api.patch(`/tasks/${task.id}/`, payload, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setShowCompletionModal(false);
@@ -156,6 +206,7 @@ export default function TaskDetail() {
               ...prev,
               status: response.data.status || 'completed',
               technician_notes: response.data.technician_notes || notes,
+              materials_used: response.data.materials_used || materialsUsed,
             }
           : prev
       );
@@ -174,20 +225,17 @@ export default function TaskDetail() {
 
   const handleRequestExtension = async () => {
     if (!task) return;
-
     if (!extensionReason.trim()) {
       alert('Please provide a reason for the extension');
       return;
     }
 
     setSubmitting(true);
-
     try {
       await api.post(`/tasks/${task.id}/request-extension/`, {
         days: extensionDays,
         reason: extensionReason,
       });
-
       setShowExtensionModal(false);
       alert('Extension request submitted successfully');
     } catch (error: any) {
@@ -218,11 +266,8 @@ export default function TaskDetail() {
           <ArrowLeft className="w-5 h-5" />
           Back to Tasks
         </button>
-
         <div className="bg-white rounded-xl shadow-lg p-10 text-center">
-          <p className="text-red-600 font-medium">
-            {errorMessage || 'ไม่พบข้อมูลงาน'}
-          </p>
+          <p className="text-red-600 font-medium">{errorMessage || 'ไม่พบข้อมูลงาน'}</p>
         </div>
       </div>
     );
@@ -238,19 +283,20 @@ export default function TaskDetail() {
         Back to Tasks
       </button>
 
+      {/* Deadline Timer — Prominent at Top */}
+      {task.deadline && taskStatus !== 'completed' && (
+        <DeadlineTimer deadline={task.deadline} />
+      )}
+
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
           <div className="flex justify-between items-start mb-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-bold">
-                  {task.request_code || task.id}
-                </h1>
+                <h1 className="text-2xl font-bold">{task.request_code || task.id}</h1>
                 <StatusBadge status={taskStatus as any} />
               </div>
-              <p className="text-blue-100">
-                {task.category} - {task.description}
-              </p>
+              <p className="text-blue-100">{task.category} - {task.description}</p>
             </div>
           </div>
 
@@ -259,15 +305,10 @@ export default function TaskDetail() {
               <Calendar className="w-4 h-4" />
               <span>
                 {task.scheduled_date
-                  ? new Date(task.scheduled_date).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })
+                  ? new Date(task.scheduled_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
                   : '-'}
               </span>
             </div>
-
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               <span>{task.scheduled_time || '-'}</span>
@@ -277,38 +318,32 @@ export default function TaskDetail() {
 
         <div className="p-6 grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
+            {/* Task Details */}
             <div>
-              <h2 className="text-xl font-semibold text-blue-900 mb-4">
-                Task Details
-              </h2>
-
+              <h2 className="text-xl font-semibold text-blue-900 mb-4">Task Details</h2>
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <p className="text-sm text-blue-600 mb-1">Category</p>
                     <p className="font-medium text-blue-900">{task.category}</p>
                   </div>
-
                   <div>
                     <p className="text-sm text-blue-600 mb-1">Priority</p>
                     <p className="font-medium text-blue-900 capitalize">{task.priority}</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2 text-blue-700">
                   <MapPin className="w-5 h-5" />
                   <span>{task.location || '-'}</span>
                 </div>
               </div>
-
               <div>
                 <h3 className="font-semibold text-blue-900 mb-2">Description</h3>
-                <p className="text-blue-700 bg-white p-4 rounded-lg border border-blue-200">
-                  {task.description}
-                </p>
+                <p className="text-blue-700 bg-white p-4 rounded-lg border border-blue-200">{task.description}</p>
               </div>
             </div>
 
+            {/* Before Images */}
             <div>
               <h3 className="font-semibold text-blue-900 mb-3">Before Images</h3>
               {task.images && task.images.length > 0 ? (
@@ -323,14 +358,14 @@ export default function TaskDetail() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-blue-50 p-4 rounded-lg text-blue-600">
-                  No uploaded images
-                </div>
+                <div className="bg-blue-50 p-4 rounded-lg text-blue-600">No uploaded images</div>
               )}
             </div>
 
-            {taskStatus === 'assigned' || taskStatus === 'in-progress' ? (
+            {/* Job Report Fields — visible when assigned or in-progress */}
+            {(taskStatus === 'assigned' || taskStatus === 'in-progress') && (
               <>
+                {/* After Images */}
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-3">Upload After Images</h3>
                   <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
@@ -349,7 +384,6 @@ export default function TaskDetail() {
                       <p className="text-sm text-blue-500">Required before marking task as complete</p>
                     </label>
                   </div>
-
                   {afterImagePreviews.length > 0 && (
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       {afterImagePreviews.map((image, index) => (
@@ -372,24 +406,41 @@ export default function TaskDetail() {
                   )}
                 </div>
 
+                {/* Materials Used */}
+                <div>
+                  <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-blue-600" />
+                    Materials Used
+                  </h3>
+                  <textarea
+                    value={materialsUsed}
+                    onChange={(e) => setMaterialsUsed(e.target.value)}
+                    className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-24"
+                    placeholder="List materials used (e.g., 1x faucet gasket, 2x pipe clamps, plumber's tape...)"
+                    disabled={submitting}
+                  />
+                </div>
+
+                {/* Work Notes */}
                 <div>
                   <h3 className="font-semibold text-blue-900 mb-3">Work Notes</h3>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="w-full px-4 py-3 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
-                    placeholder="Add notes about the work performed, parts used, etc..."
+                    placeholder="Add notes about the work performed..."
                     disabled={submitting}
                   />
                 </div>
               </>
-            ) : null}
+            )}
           </div>
 
+          {/* Sidebar */}
           <div className="space-y-6">
+            {/* Resident Info */}
             <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
               <h3 className="font-semibold text-blue-900 mb-4">Resident Information</h3>
-
               <div className="text-center mb-4">
                 <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">
                   {residentInitials}
@@ -397,27 +448,27 @@ export default function TaskDetail() {
                 <h4 className="font-semibold text-blue-900">{task.resident || '-'}</h4>
                 <p className="text-sm text-blue-600">Unit {task.unit || '-'}</p>
               </div>
-
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-blue-700">
                   <Phone className="w-5 h-5" />
                   <span className="text-sm">{task.resident_phone || '-'}</span>
                 </div>
-
                 <div className="flex items-center gap-3 text-blue-700">
                   <Mail className="w-5 h-5" />
                   <span className="text-sm">{task.resident_email || '-'}</span>
                 </div>
               </div>
-
-              <button
-                type="button"
-                className="w-full mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                Call Resident
-              </button>
+              {task.resident_phone && (
+                <a
+                  href={`tel:${task.resident_phone}`}
+                  className="block w-full mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-center"
+                >
+                  Call Resident
+                </a>
+              )}
             </div>
 
+            {/* Action Buttons */}
             {taskStatus === 'assigned' && (
               <div className="space-y-3">
                 <button
@@ -440,7 +491,6 @@ export default function TaskDetail() {
                   <CheckCircle className="w-5 h-5" />
                   Mark as Complete
                 </button>
-
                 <button
                   onClick={() => setShowExtensionModal(true)}
                   disabled={submitting}
@@ -456,15 +506,14 @@ export default function TaskDetail() {
               <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
                 <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
                 <h3 className="font-semibold text-green-900 mb-2">Task Completed</h3>
-                <p className="text-sm text-green-700">
-                  This task has been marked as completed
-                </p>
+                <p className="text-sm text-green-700">This task has been marked as completed</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* Completion Modal */}
       {showCompletionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
@@ -472,27 +521,28 @@ export default function TaskDetail() {
             <p className="text-blue-700 mb-4">
               Are you sure you want to mark this task as complete? Make sure you have:
             </p>
-
             <ul className="text-sm text-blue-600 mb-6 space-y-2">
               <li className="flex items-center gap-2">
                 <CheckCircle className={`w-4 h-4 ${afterImages.length > 0 ? 'text-green-600' : 'text-gray-400'}`} />
                 Uploaded after images ({afterImages.length} uploaded)
               </li>
               <li className="flex items-center gap-2">
+                <CheckCircle className={`w-4 h-4 ${materialsUsed.trim() ? 'text-green-600' : 'text-gray-400'}`} />
+                Listed materials used
+              </li>
+              <li className="flex items-center gap-2">
                 <CheckCircle className={`w-4 h-4 ${notes.trim() ? 'text-green-600' : 'text-gray-400'}`} />
                 Added work notes
               </li>
             </ul>
-
             <div className="flex gap-3">
               <button
                 onClick={handleCompleteTask}
                 disabled={submitting}
                 className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Complete Task
+                {submitting ? 'Submitting...' : 'Complete Task'}
               </button>
-
               <button
                 onClick={() => setShowCompletionModal(false)}
                 disabled={submitting}
@@ -505,17 +555,13 @@ export default function TaskDetail() {
         </div>
       )}
 
+      {/* Extension Modal */}
       {showExtensionModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold text-blue-900 mb-4">
-              Request Deadline Extension
-            </h3>
-
+            <h3 className="text-xl font-semibold text-blue-900 mb-4">Request Deadline Extension</h3>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-blue-900 mb-2">
-                Extension Days
-              </label>
+              <label className="block text-sm font-medium text-blue-900 mb-2">Extension Days</label>
               <input
                 type="number"
                 value={extensionDays}
@@ -526,11 +572,8 @@ export default function TaskDetail() {
                 disabled={submitting}
               />
             </div>
-
             <div className="mb-6">
-              <label className="block text-sm font-medium text-blue-900 mb-2">
-                Reason for Extension
-              </label>
+              <label className="block text-sm font-medium text-blue-900 mb-2">Reason for Extension</label>
               <textarea
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}
@@ -539,16 +582,14 @@ export default function TaskDetail() {
                 disabled={submitting}
               />
             </div>
-
             <div className="flex gap-3">
               <button
                 onClick={handleRequestExtension}
                 disabled={submitting}
                 className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Submit Request
+                {submitting ? 'Submitting...' : 'Submit Request'}
               </button>
-
               <button
                 onClick={() => setShowExtensionModal(false)}
                 disabled={submitting}
