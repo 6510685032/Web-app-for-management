@@ -49,7 +49,12 @@ export default function MaintenanceRequestForm() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newImages = Array.from(e.target.files);
+      const newImages = Array.from(e.target.files).filter((file) =>
+        file.type.startsWith('image/')
+      );
+      if (newImages.length < (e.target.files?.length || 0)) {
+        alert('Only image files (PNG, JPG, GIF, WEBP) are allowed.');
+      }
       setImages((prev) => [...prev, ...newImages]);
     }
   };
@@ -232,13 +237,13 @@ export default function MaintenanceRequestForm() {
 
           <div>
             <label className="block text-sm font-medium text-blue-900 mb-2">
-              Upload Images / Videos (Optional)
+              Upload Images (Optional)
             </label>
             <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
               <input
                 type="file"
                 id="image-upload"
-                accept="image/*,video/*"
+                accept="image/png,image/jpeg,image/gif,image/webp"
                 multiple
                 onChange={handleImageUpload}
                 className="hidden"
@@ -246,8 +251,8 @@ export default function MaintenanceRequestForm() {
               />
               <label htmlFor="image-upload" className="cursor-pointer">
                 <Upload className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-                <p className="text-blue-700 font-medium mb-1">Click to upload images or videos</p>
-                <p className="text-sm text-blue-500">PNG, JPG, MP4 up to 10MB each</p>
+                <p className="text-blue-700 font-medium mb-1">Click to upload images</p>
+                <p className="text-sm text-blue-500">PNG, JPG, GIF, WEBP up to 10MB each</p>
               </label>
             </div>
 
@@ -255,19 +260,11 @@ export default function MaintenanceRequestForm() {
               <div className="grid grid-cols-3 gap-4 mt-4">
                 {imagePreviews.map((image, index) => (
                   <div key={index} className="relative group">
-                    {image.file.type.startsWith('video/') ? (
-                      <video
-                        src={image.url}
-                        className="w-full h-32 object-cover rounded-lg border border-blue-200"
-                        controls
-                      />
-                    ) : (
-                      <img
-                        src={image.url}
-                        alt={`Upload ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg border border-blue-200"
-                      />
-                    )}
+                    <img
+                      src={image.url}
+                      alt={`Upload ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border border-blue-200"
+                    />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}

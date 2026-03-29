@@ -449,6 +449,8 @@ def maintenance_requests(request):
 
             uploaded_images = request.FILES.getlist("images")
             for image in uploaded_images:
+                if not image.content_type.startswith('image/'):
+                    continue  # Skip non-image files
                 MaintenanceRequestImage.objects.create(
                     maintenance_request=maintenance_request,
                     image=image
@@ -641,6 +643,8 @@ def task_detail(request, pk):
 
         uploaded_after_images = request.FILES.getlist("after_images")
         for image in uploaded_after_images:
+            if not image.content_type.startswith('image/'):
+                continue  # Skip non-image files
             MaintenanceRequestImage.objects.create(
                 maintenance_request=task,
                 image=image
