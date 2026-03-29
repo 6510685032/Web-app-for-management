@@ -8,8 +8,10 @@ export default function TopNavigation() {
   const { user, logout } = useUser();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification } = useNotifications();
   const navigate = useNavigate();
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -28,8 +30,19 @@ export default function TopNavigation() {
   }, []);
 
   const handleLogout = () => {
+    setShowProfile(false);
     logout();
     navigate('/');
+  };
+
+  const handleOpenProfile = () => {
+    navigate('/profile');
+    setShowProfile(false);
+  };
+
+  const handleOpenSettings = () => {
+    navigate('/settings');
+    setShowProfile(false);
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -62,19 +75,6 @@ export default function TopNavigation() {
     }
   };
 
-  const getNotificationColor = (type: string) => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-      default:
-        return 'bg-blue-50 border-blue-200';
-    }
-  };
-
   const formatTime = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -86,11 +86,12 @@ export default function TopNavigation() {
     return 'Just now';
   };
 
+  const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'U';
+
   return (
     <nav className="bg-white border-b border-blue-100 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo and Brand */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <Building2 className="w-6 h-6 text-white" />
@@ -101,9 +102,7 @@ export default function TopNavigation() {
             </div>
           </div>
 
-          {/* Right side - Notifications and Profile */}
           <div className="flex items-center gap-4">
-            {/* Notifications */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -130,6 +129,7 @@ export default function TopNavigation() {
                       </button>
                     )}
                   </div>
+
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="p-8 text-center text-blue-400">
@@ -155,6 +155,7 @@ export default function TopNavigation() {
                               <p className="text-sm text-blue-600 mb-2">{notif.message}</p>
                               <p className="text-xs text-blue-400">{formatTime(notif.timestamp)}</p>
                             </div>
+
                             <button
                               onClick={() => clearNotification(notif.id)}
                               className="text-blue-400 hover:text-blue-600 p-1"
@@ -162,6 +163,7 @@ export default function TopNavigation() {
                               <X className="w-4 h-4" />
                             </button>
                           </div>
+
                           {!notif.read && (
                             <button
                               onClick={() => markAsRead(notif.id)}
@@ -178,19 +180,20 @@ export default function TopNavigation() {
               )}
             </div>
 
-            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setShowProfile(!showProfile)}
                 className="flex items-center gap-3 p-2 pr-3 hover:bg-blue-50 rounded-lg transition-colors"
               >
                 <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium">
-                  {user?.name.charAt(0)}
+                  {userInitial}
                 </div>
+
                 <div className="text-left hidden md:block">
-                  <p className="text-sm font-medium text-blue-900">{user?.name}</p>
+                  <p className="text-sm font-medium text-blue-900">{user?.name || 'User'}</p>
                   <p className="text-xs text-blue-500">{getRoleLabel(user?.role || '')}</p>
                 </div>
+
                 <ChevronDown className="w-4 h-4 text-blue-600" />
               </button>
 
@@ -199,13 +202,14 @@ export default function TopNavigation() {
                   <div className="p-4 bg-blue-50 border-b border-blue-100">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium text-lg">
-                        {user?.name.charAt(0)}
+                        {userInitial}
                       </div>
                       <div>
-                        <p className="font-medium text-blue-900">{user?.name}</p>
-                        <p className="text-sm text-blue-600">{user?.email}</p>
+                        <p className="font-medium text-blue-900">{user?.name || 'User'}</p>
+                        <p className="text-sm text-blue-600">{user?.email || '-'}</p>
                       </div>
                     </div>
+
                     <span
                       className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(
                         user?.role || ''
@@ -214,22 +218,26 @@ export default function TopNavigation() {
                       {getRoleLabel(user?.role || '')}
                     </span>
                   </div>
+
                   <div className="p-2">
                     <button
-                      onClick={() => {
-                        navigate('/profile');
-                        setShowProfile(false);
-                      }}
+                      onClick={handleOpenProfile}
                       className="w-full flex items-center gap-3 px-4 py-3 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       <User className="w-5 h-5" />
                       <span>View Profile</span>
                     </button>
-                    <button className="w-full flex items-center gap-3 px-4 py-3 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+
+                    <button
+                      onClick={handleOpenSettings}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
                       <Settings className="w-5 h-5" />
                       <span>Settings</span>
                     </button>
+
                     <div className="border-t border-blue-100 my-2"></div>
+
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
