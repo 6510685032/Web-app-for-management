@@ -38,6 +38,13 @@ urlpatterns = [
     path("api/announcements/", views.announcements_view, name="announcements"),
 
     # =========================
+    # Notifications
+    # =========================
+    path("api/notifications/", views.list_notifications, name="list_notifications"),
+    path("api/notifications/<int:pk>/mark-read/", views.mark_notification_read, name="mark_notification_read"),
+    path("api/notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
+
+    # =========================
     # Dashboard / Technician
     # =========================
     path("api/dashboard-stats/", views.dashboard_stats, name="dashboard_stats"),

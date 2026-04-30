@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import api from '../utils/api';
 
 export interface Notification {
   id: string;
@@ -23,36 +24,8 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-// Mock notifications
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    title: 'Maintenance Request Approved',
-    message: 'Your plumbing repair request has been approved and assigned to a technician.',
-    type: 'success',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: '2',
-    title: 'Scheduled Maintenance',
-    message: 'Pool maintenance scheduled for tomorrow at 10:00 AM.',
-    type: 'info',
-    timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000),
-    read: false,
-  },
-  {
-    id: '3',
-    title: 'Task Deadline Extension Request',
-    message: 'Technician has requested a 2-day deadline extension for your repair.',
-    type: 'warning',
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    read: true,
-  },
-];
-
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isEnabled, setIsEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('djmp_notifications_enabled');
     return saved !== null ? JSON.parse(saved) : true;
@@ -64,6 +37,31 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setIsEnabled(value);
     localStorage.setItem('djmp_notifications_enabled', JSON.stringify(value));
   };
+
+  const fetchNotifications = async () => {
+    if (!isEnabled) return;
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+      const response = await api.get('/notifications/');
+      const fetchedNotifications = response.data.map((n: any) => ({
+        ...n,
+        timestamp: new Date(n.timestamp),
+      }));
+      setNotifications(fetchedNotifications);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    
+    // Poll every 15 seconds
+    const interval = setInterval(fetchNotifications, 15000);
+    return () => clearInterval(interval);
+  }, [isEnabled]);
 
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
     if (!isEnabled) return;
@@ -77,14 +75,24 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications(prev => [newNotification, ...prev]);
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(n => (n.id === id ? { ...n, read: true } : n))
-    );
+  const markAsRead = async (id: string) => {
+    try {
+      await api.patch(`/notifications/${id}/mark-read/`);
+      setNotifications(prev =>
+        prev.map(n => (n.id === id ? { ...n, read: true } : n))
+      );
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      await api.post('/notifications/mark-all-read/');
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+    }
   };
 
   const clearNotification = (id: string) => {

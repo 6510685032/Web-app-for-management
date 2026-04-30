@@ -12,10 +12,10 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 try:
-    from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage, Announcement
+    from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage, Announcement, Notification
     HAS_ANNOUNCEMENT_MODEL = True
 except ImportError:
-    from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage
+    from .models import UserProfile, MaintenanceRequest, MaintenanceRequestImage, Notification
     Announcement = None
     HAS_ANNOUNCEMENT_MODEL = False
 
@@ -651,6 +651,15 @@ def maintenance_requests(request):
 
         maintenance_request = MaintenanceRequest.objects.create(**create_kwargs)
 
+        officers = User.objects.filter(profile__user_type="officer")
+        for officer in officers:
+            create_notification(
+                officer, 
+                "New Request Submitted", 
+                f"A new request ({getattr(maintenance_request, 'request_code', f'REQ-{maintenance_request.id}')}) was submitted by {user_obj.username}.",
+                "info"
+            )
+
         uploaded_images = request.FILES.getlist("images")
         for image in uploaded_images:
             if getattr(image, "content_type", "").startswith("image/"):
@@ -763,6 +772,15 @@ def task_detail(request, pk):
 
         if model_has_field(MaintenanceRequest, "approved_completion") and new_status == "completed":
             task.approved_completion = "pending_approval"
+            
+            officers = User.objects.filter(profile__user_type="officer")
+            for officer in officers:
+                create_notification(
+                    officer, 
+                    "Task Pending Approval", 
+                    f"Task {task.request_code} is waiting for your approval.",
+                    "warning"
+                )
 
     if technician_notes is not None and model_has_field(MaintenanceRequest, "technician_notes"):
         task.technician_notes = technician_notes
@@ -941,6 +959,12 @@ def manage_request_status(request, pk):
         req.assigned_technician = tech_user
         if req.status == "pending":
             req.status = "assigned"
+            create_notification(
+                tech_user,
+                "New Task Assigned",
+                f"You have been assigned to task {req.request_code}.",
+                "info"
+            )
 
     if model_has_field(MaintenanceRequest, "deadline") and "deadline" in data:
         deadline_str = (data.get("deadline") or "").strip()
@@ -980,9 +1004,30 @@ def manage_request_status(request, pk):
         if approved_completion:
             if approved_completion not in APPROVAL_STATUSES:
                 return Response({"error": "Invalid approved_completion value"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            old_approval = getattr(req, "approved_completion", "")
             req.approved_completion = approved_completion
+            
             if approved_completion == "rejected":
                 req.status = "in-progress"
+            elif approved_completion == "approved":
+                req.status = "completed"
+
+            if old_approval != approved_completion:
+                if approved_completion == "approved":
+                    create_notification(
+                        req.resident,
+                        "Task Approved",
+                        f"Your request {req.request_code} has been completed and approved.",
+                        "success"
+                    )
+                elif approved_completion == "rejected" and req.assigned_technician:
+                    create_notification(
+                        req.assigned_technician,
+                        "Task Rejected",
+                        f"Your work for task {req.request_code} was rejected. Please review and fix.",
+                        "error"
+                    )
 
     req.save()
 
@@ -1128,3 +1173,56 @@ def list_technicians(request):
         )
 
     return Response(data)
+
+
+# ==========================================
+# Notifications
+# ==========================================
+
+def create_notification(user, title, message, notif_type='info'):
+    try:
+        Notification.objects.create(user=user, title=title, message=message, type=notif_type)
+    except Exception as e:
+        print(f"Error creating notification: {e}")
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_notifications(request):
+    try:
+        notifs = Notification.objects.filter(user=request.user)[:50]
+        data = []
+        for n in notifs:
+            data.append({
+                "id": str(n.id),
+                "title": n.title,
+                "message": n.message,
+                "type": n.type,
+                "read": n.read,
+                "timestamp": n.created_at.isoformat()
+            })
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def mark_notification_read(request, pk):
+    try:
+        notif = Notification.objects.get(pk=pk, user=request.user)
+        notif.read = True
+        notif.save()
+        return Response({"status": "success"})
+    except Notification.DoesNotExist:
+        return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mark_all_notifications_read(request):
+    try:
+        Notification.objects.filter(user=request.user, read=False).update(read=True)
+        return Response({"status": "success"})
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
