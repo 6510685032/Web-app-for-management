@@ -94,10 +94,14 @@ def safe_image_urls(obj):
         return []
 
     urls = []
+    base_url = getattr(settings, "BACKEND_URL", "http://127.0.0.1:8000")
     try:
         for item in obj.images.all():
             if getattr(item, "image", None):
-                urls.append(item.image.url)
+                url = item.image.url
+                if url.startswith("/"):
+                    url = base_url + url
+                urls.append(url)
     except Exception:
         pass
     return urls
