@@ -9,6 +9,8 @@ import AnalyticsDashboard from './AnalyticsDashboard';
 import KanbanBoard from './KanbanBoard';
 import TechnicianSchedule from './TechnicianSchedule';
 
+import OfficerSidebar from './OfficerSidebar';
+
 export default function OfficerDashboard() {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -20,17 +22,22 @@ export default function OfficerDashboard() {
   }, [user, navigate]);
 
   return (
-    <div className="djmp-bg">
+    <div className="djmp-bg flex flex-col min-h-screen overflow-hidden">
       <TopNavigation />
-      <Routes>
-        <Route path="/" element={<OfficerHome />} />
-        <Route path="/requests" element={<RequestManagement />} />
-        <Route path="/dispatch" element={<TaskDispatch />} />
-        <Route path="/analytics" element={<AnalyticsDashboard />} />
-        <Route path="/kanban" element={<KanbanBoard />} />
-        <Route path="/schedule" element={<TechnicianSchedule />} />
-        <Route path="*" element={<Navigate to="/officer" replace />} />
-      </Routes>
+      <div className="flex flex-1 overflow-hidden">
+        <OfficerSidebar />
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative">
+          <Routes>
+            <Route path="/" element={<OfficerHome />} />
+            <Route path="/requests" element={<RequestManagement />} />
+            <Route path="/dispatch" element={<TaskDispatch />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/kanban" element={<KanbanBoard />} />
+            <Route path="/schedule" element={<TechnicianSchedule />} />
+            <Route path="*" element={<Navigate to="/officer" replace />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 }
