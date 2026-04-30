@@ -93,12 +93,12 @@ export default function AnalyticsDashboard() {
 
   // 6 KPI Boxes
   const kpis = useMemo(() => [
-    { label: 'Total Requests', value: String(stats.total), icon: ClipboardList, color: 'bg-blue-500', sub: `${stats.cancelled} cancelled` },
-    { label: 'Pending', value: String(stats.pending), icon: Clock, color: 'bg-yellow-500', sub: `${stats.assigned} assigned` },
-    { label: 'In Progress', value: String(stats.in_progress), icon: TrendingUp, color: 'bg-indigo-500', sub: 'active work' },
-    { label: 'Completed', value: String(stats.completed), icon: CheckCircle, color: 'bg-green-500', sub: `${stats.pending_approval} pending approval` },
-    { label: 'Overdue', value: String(stats.overdue), icon: AlertTriangle, color: 'bg-red-500', sub: stats.overdue > 0 ? 'needs attention' : 'on track' },
-    { label: 'Approved', value: String(stats.approved), icon: ShieldCheck, color: 'bg-emerald-500', sub: `${stats.rejected} rejected` },
+    { label: 'Total Requests', value: String(stats.total), icon: ClipboardList, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', sub: `${stats.cancelled} cancelled` },
+    { label: 'Pending', value: String(stats.pending), icon: Clock, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', sub: `${stats.assigned} assigned` },
+    { label: 'In Progress', value: String(stats.in_progress), icon: TrendingUp, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)', sub: 'active work' },
+    { label: 'Completed', value: String(stats.completed), icon: CheckCircle, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', sub: `${stats.pending_approval} pending approval` },
+    { label: 'Overdue', value: String(stats.overdue), icon: AlertTriangle, color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', sub: stats.overdue > 0 ? 'needs attention' : 'on track' },
+    { label: 'Approved', value: String(stats.approved), icon: ShieldCheck, color: '#059669', bg: 'rgba(5, 150, 105, 0.1)', sub: `${stats.rejected} rejected` },
   ], [stats]);
 
   // Status distribution for pie chart
@@ -182,181 +182,209 @@ export default function AnalyticsDashboard() {
   }, [requests]);
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6 fade-in-up pb-20">
       <button
         onClick={() => navigate('/officer')}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
+        className="flex items-center gap-2 group transition-colors mb-6"
+        style={{ color: 'var(--djmp-text-muted)' }}
       >
-        <ArrowLeft className="w-5 h-5" />
-        Back to Dashboard
+        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <span className="text-sm font-semibold uppercase tracking-widest">Back to Dashboard</span>
       </button>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-blue-900 mb-2">Analytics & Performance</h1>
-        <p className="text-blue-600">Operational insights, SLA compliance, and performance metrics</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-black uppercase tracking-tight mb-2" style={{ color: 'var(--djmp-text)' }}>Analytics & Performance</h1>
+        <p className="text-sm font-medium" style={{ color: 'var(--djmp-text-muted)' }}>Operational insights, SLA compliance, and performance metrics</p>
       </div>
 
       {errorMessage && (
-        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        <div className="mb-6 rounded-xl border px-4 py-3 text-sm font-bold flex items-center gap-2" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
+          <AlertTriangle className="w-5 h-5" />
           {errorMessage}
         </div>
       )}
 
       {/* 6 KPI Boxes */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        {kpis.map((kpi) => {
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+        {kpis.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-              <div className={`w-11 h-11 ${kpi.color} rounded-lg flex items-center justify-center mb-3 flex-shrink-0`}>
-                <Icon className="w-5 h-5 text-white flex-shrink-0" />
+            <div 
+              key={kpi.label} 
+              className="glass-card p-6 border-none flex flex-col justify-between"
+              style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg" style={{ background: kpi.bg, color: kpi.color }}>
+                  <Icon className="w-6 h-6" />
+                </div>
               </div>
-              <p className="text-2xl font-bold text-blue-900 mb-1">{loading ? '-' : kpi.value}</p>
-              <p className="text-sm text-blue-600 font-medium mb-1">{kpi.label}</p>
-              <p className="text-xs text-blue-500">{kpi.sub}</p>
+              <div>
+                <p className="text-3xl font-black tracking-tight" style={{ color: 'var(--djmp-text)' }}>{loading ? '-' : kpi.value}</p>
+                <p className="text-xs font-bold uppercase tracking-widest mt-1" style={{ color: 'var(--djmp-text-muted)' }}>{kpi.label}</p>
+                <p className="text-[10px] font-semibold mt-1" style={{ color: kpi.color }}>{kpi.sub}</p>
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid lg:grid-cols-2 gap-8 mb-8">
         {/* Chart 1: Overall Status Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-          <h2 className="text-xl font-semibold text-blue-900 mb-4">Status Distribution</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                outerRadius={100}
-                dataKey="value"
-              >
-                {statusDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-6 border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+          <h2 className="text-xl font-bold uppercase tracking-tight mb-6" style={{ color: 'var(--djmp-text)' }}>Status Distribution</h2>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusDistribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {statusDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', borderRadius: '12px', color: 'var(--djmp-text)' }}
+                  itemStyle={{ color: 'var(--djmp-text)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Chart 2: SLA Compliance Trend */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-          <h2 className="text-xl font-semibold text-blue-900 mb-4">SLA Compliance Trend (%)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" domain={[0, 100]} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Legend />
-              <Line type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={3} name="SLA %" dot={{ fill: '#10b981', r: 5 }} />
-              <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} name="Total Requests" dot={{ fill: '#3b82f6', r: 4 }} />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-6 border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+          <h2 className="text-xl font-bold uppercase tracking-tight mb-6" style={{ color: 'var(--djmp-text)' }}>SLA Compliance Trend (%)</h2>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--djmp-border)" vertical={false} />
+                <XAxis dataKey="month" stroke="var(--djmp-text-muted)" tick={{ fill: 'var(--djmp-text-muted)' }} />
+                <YAxis stroke="var(--djmp-text-muted)" tick={{ fill: 'var(--djmp-text-muted)' }} domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', borderRadius: '12px', color: 'var(--djmp-text)' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Line type="monotone" dataKey="sla" stroke="#10b981" strokeWidth={3} name="SLA %" dot={{ fill: '#10b981', r: 5 }} />
+                <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} name="Total Requests" dot={{ fill: '#3b82f6', r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
+      <div className="grid lg:grid-cols-2 gap-8 mb-8">
         {/* Weekly Performance */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-          <h2 className="text-xl font-semibold text-blue-900 mb-4">Weekly Performance</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={weeklyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="day" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" allowDecimals={false} />
-              <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-              <Legend />
-              <Bar dataKey="completed" fill="#10b981" name="Completed" />
-              <Bar dataKey="pending" fill="#f59e0b" name="Pending" />
-              <Bar dataKey="overdue" fill="#ef4444" name="Overdue" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-6 border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+          <h2 className="text-xl font-bold uppercase tracking-tight mb-6" style={{ color: 'var(--djmp-text)' }}>Weekly Performance</h2>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--djmp-border)" vertical={false} />
+                <XAxis dataKey="day" stroke="var(--djmp-text-muted)" tick={{ fill: 'var(--djmp-text-muted)' }} />
+                <YAxis stroke="var(--djmp-text-muted)" tick={{ fill: 'var(--djmp-text-muted)' }} allowDecimals={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', borderRadius: '12px', color: 'var(--djmp-text)' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                <Bar dataKey="completed" fill="#10b981" name="Completed" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="pending" fill="#f59e0b" name="Pending" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="overdue" fill="#ef4444" name="Overdue" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Request Categories */}
-        <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-          <h2 className="text-xl font-semibold text-blue-900 mb-4">Request Categories</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                outerRadius={100}
-                dataKey="value"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-6 border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+          <h2 className="text-xl font-bold uppercase tracking-tight mb-6" style={{ color: 'var(--djmp-text)' }}>Request Categories</h2>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={categoryData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                  outerRadius={100}
+                  dataKey="value"
+                >
+                  {categoryData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ backgroundColor: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', borderRadius: '12px', color: 'var(--djmp-text)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Technician Performance */}
-      <div className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
-        <div className="p-6 border-b border-blue-100 bg-blue-50">
-          <h2 className="text-xl font-semibold text-blue-900 flex items-center gap-2">
-            <Users className="w-6 h-6" />
+      <div className="glass-card overflow-hidden border-none shadow-2xl" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+        <div className="p-6 border-b" style={{ borderColor: 'var(--djmp-border)', background: 'var(--djmp-surface-2)' }}>
+          <h2 className="text-xl font-bold uppercase tracking-tight flex items-center gap-3" style={{ color: 'var(--djmp-text)' }}>
+            <Users className="w-5 h-5" style={{ color: 'var(--accent-500)' }} />
             Technician Performance
           </h2>
         </div>
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="p-8 text-center text-blue-600 font-medium">Loading technician performance...</div>
+            <div className="p-8 text-center text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)' }}>Loading technician performance...</div>
           ) : technicianPerformance.length === 0 ? (
-            <div className="p-8 text-center text-blue-600">No technician performance data available.</div>
+            <div className="p-12 text-center text-sm font-medium" style={{ color: 'var(--djmp-text-muted)' }}>No technician performance data available.</div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-blue-50 border-b border-blue-100">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Technician</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Completed Tasks</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Active Tasks</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Total Tasks</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-blue-700 uppercase tracking-wider">Performance</th>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr style={{ background: 'var(--djmp-surface-2)' }}>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)', borderBottom: '1px solid var(--djmp-border)' }}>Technician</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)', borderBottom: '1px solid var(--djmp-border)' }}>Completed Tasks</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)', borderBottom: '1px solid var(--djmp-border)' }}>Active Tasks</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)', borderBottom: '1px solid var(--djmp-border)' }}>Total Tasks</th>
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)', borderBottom: '1px solid var(--djmp-border)' }}>Performance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-blue-100 bg-white">
+              <tbody>
                 {technicianPerformance.map((tech) => (
-                  <tr key={tech.name} className="hover:bg-blue-50 transition-colors">
+                  <tr key={tech.name} className="group transition-colors hover:bg-white/5" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black shadow-lg text-white" style={{ background: 'var(--accent-gradient)' }}>
                           {tech.name.split(' ').map((n) => n[0]).join('').substring(0, 2)}
                         </div>
-                        <span className="font-medium text-blue-900">{tech.name}</span>
+                        <span className="font-bold text-sm" style={{ color: 'var(--djmp-text)' }}>{tech.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-blue-900 font-semibold">{tech.completed}</span>
+                      <span className="font-black text-emerald-500">{tech.completed}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-blue-700">{tech.active}</span>
+                      <span className="font-semibold text-amber-500">{tech.active}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-blue-700">{tech.total}</span>
+                      <span className="font-semibold" style={{ color: 'var(--djmp-text)' }}>{tech.total}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-blue-100 rounded-full h-2 w-24">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1 rounded-full h-1.5 w-32 overflow-hidden" style={{ background: 'var(--djmp-surface-2)' }}>
                           <div
-                            className="bg-green-500 h-2 rounded-full transition-all"
-                            style={{ width: `${tech.completionPercent}%` }}
+                            className="h-full transition-all"
+                            style={{ 
+                              width: `${tech.completionPercent}%`,
+                              background: tech.completionPercent > 80 ? '#10b981' : tech.completionPercent > 50 ? '#f59e0b' : '#ef4444'
+                            }}
                           ></div>
                         </div>
-                        <span className="text-sm text-blue-700 font-medium">{tech.completionPercent}%</span>
+                        <span className="text-xs font-black" style={{ color: 'var(--djmp-text)' }}>{tech.completionPercent}%</span>
                       </div>
                     </td>
                   </tr>
@@ -368,4 +396,4 @@ export default function AnalyticsDashboard() {
       </div>
     </div>
   );
-}
+}
