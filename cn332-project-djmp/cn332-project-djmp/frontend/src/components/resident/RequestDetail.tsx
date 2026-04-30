@@ -92,7 +92,7 @@ export default function RequestDetail() {
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto p-6">
-        <div className="bg-white rounded-xl shadow-lg p-10 text-center text-blue-600 font-medium">
+        <div className="glass-card rounded-xl shadow-lg p-10 text-center font-medium" style={{ background: 'var(--djmp-surface)', color: 'var(--accent-600)' }}>
           Loading request details...
         </div>
       </div>
@@ -104,14 +104,15 @@ export default function RequestDetail() {
       <div className="max-w-5xl mx-auto p-6">
         <button
           onClick={() => navigate('/resident/requests')}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
+          className="flex items-center gap-2 mb-6 font-medium hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--accent-600)' }}
         >
           <ArrowLeft className="w-5 h-5" />
           Back to Requests
         </button>
 
-        <div className="bg-white rounded-xl shadow-lg p-10 text-center">
-          <p className="text-red-600 font-medium">
+        <div className="glass-card rounded-xl shadow-lg p-10 text-center" style={{ background: 'var(--djmp-surface)' }}>
+          <p className="font-medium text-red-500">
             {errorMessage || 'ไม่พบข้อมูลรายการแจ้งซ่อม'}
           </p>
         </div>
@@ -123,14 +124,15 @@ export default function RequestDetail() {
     <div className="max-w-5xl mx-auto p-6">
       <button
         onClick={() => navigate('/resident/requests')}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
+        className="flex items-center gap-2 mb-6 font-medium hover:opacity-80 transition-opacity"
+        style={{ color: 'var(--accent-600)' }}
       >
         <ArrowLeft className="w-5 h-5" />
         Back to Requests
       </button>
 
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+      <div className="glass-card rounded-xl shadow-lg overflow-hidden" style={{ background: 'var(--djmp-surface)' }}>
+        <div className="p-6 text-white" style={{ background: 'var(--accent-gradient)' }}>
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -139,13 +141,13 @@ export default function RequestDetail() {
                 </h1>
                 <StatusBadge status={request.status as any} />
               </div>
-              <p className="text-blue-100">
+              <p className="opacity-90">
                 {request.category} - {request.description}
               </p>
             </div>
 
             <div className="text-right">
-              <p className="text-sm text-blue-100 mb-1">Submitted on</p>
+              <p className="text-sm opacity-80 mb-1">Submitted on</p>
               <p className="font-medium">
                 {request.created_at
                   ? new Date(request.created_at).toLocaleDateString('en-US', {
@@ -162,36 +164,36 @@ export default function RequestDetail() {
         <div className="p-6 grid md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <div>
-              <h2 className="text-xl font-semibold text-blue-900 mb-4">
+              <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--djmp-text)' }}>
                 Request Information
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-600 mb-1">Category</p>
-                  <p className="font-medium text-blue-900">{request.category}</p>
+                <div className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Category</p>
+                  <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>{request.category}</p>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <p className="text-sm text-blue-600 mb-1">Priority</p>
-                  <p className="font-medium text-blue-900 capitalize">
+                <div className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Priority</p>
+                  <p className="font-medium capitalize" style={{ color: 'var(--djmp-text)' }}>
                     {request.priority}
                   </p>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-blue-600" />
+                <div className="p-4 rounded-lg border flex items-center gap-2" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <MapPin className="w-5 h-5" style={{ color: 'var(--accent-500)' }} />
                   <div>
-                    <p className="text-sm text-blue-600 mb-1">Location</p>
-                    <p className="font-medium text-blue-900">{request.location}</p>
+                    <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Location</p>
+                    <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>{request.location}</p>
                   </div>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
+                <div className="p-4 rounded-lg border flex items-center gap-2" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <Calendar className="w-5 h-5" style={{ color: 'var(--accent-500)' }} />
                   <div>
-                    <p className="text-sm text-blue-600 mb-1">Scheduled Date</p>
-                    <p className="font-medium text-blue-900">
+                    <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Scheduled Date</p>
+                    <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
                       {request.scheduled_date
                         ? new Date(request.scheduled_date).toLocaleDateString(
                             'en-US',
@@ -205,14 +207,14 @@ export default function RequestDetail() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-blue-900 mb-2">Description</h3>
-              <p className="text-blue-700 bg-blue-50 p-4 rounded-lg">
+              <h3 className="font-semibold mb-2" style={{ color: 'var(--djmp-text)' }}>Description</h3>
+              <p className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>
                 {request.description}
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+              <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--djmp-text)' }}>
                 <ImageIcon className="w-5 h-5" />
                 Uploaded Images
               </h3>
@@ -228,12 +230,13 @@ export default function RequestDetail() {
                           : `http://127.0.0.1:8000${img}`
                       }
                       alt={`Request image ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg border border-blue-200"
+                      className="w-full h-48 object-cover rounded-lg border"
+                      style={{ borderColor: 'var(--djmp-border)' }}
                     />
                   ))}
                 </div>
               ) : (
-                <div className="bg-blue-50 p-4 rounded-lg text-blue-600">
+                <div className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>
                   No uploaded images
                 </div>
               )}
@@ -241,30 +244,30 @@ export default function RequestDetail() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-              <h3 className="font-semibold text-blue-900 mb-4">
+            <div className="rounded-lg p-6 border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+              <h3 className="font-semibold mb-4" style={{ color: 'var(--djmp-text)' }}>
                 Assigned Technician
               </h3>
 
               {technicianInfo ? (
                 <>
                   <div className="text-center mb-4">
-                    <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3">
+                    <div className="w-20 h-20 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-3" style={{ background: 'var(--accent-500)' }}>
                       {technicianInfo.avatar}
                     </div>
-                    <h4 className="font-semibold text-blue-900">
+                    <h4 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
                       {technicianInfo.name}
                     </h4>
-                    <p className="text-sm text-blue-600">Assigned Technician</p>
+                    <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>Assigned Technician</p>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-blue-700">
+                    <div className="flex items-center gap-3" style={{ color: 'var(--djmp-text-muted)' }}>
                       <Phone className="w-5 h-5" />
                       <span className="text-sm">{technicianInfo.phone}</span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-blue-700">
+                    <div className="flex items-center gap-3" style={{ color: 'var(--djmp-text-muted)' }}>
                       <Mail className="w-5 h-5" />
                       <span className="text-sm">{technicianInfo.email}</span>
                     </div>
@@ -272,31 +275,32 @@ export default function RequestDetail() {
 
                   <button
                     type="button"
-                    className="w-full mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                    className="w-full mt-4 text-white py-2 rounded-lg transition-all font-medium hover:brightness-110 shadow-sm"
+                    style={{ background: 'var(--accent-gradient)' }}
                   >
                     Contact Technician
                   </button>
                 </>
               ) : (
-                <p className="text-blue-600">No technician assigned yet</p>
+                <p style={{ color: 'var(--djmp-text-muted)' }}>No technician assigned yet</p>
               )}
             </div>
 
             {request.status === 'in-progress' && (
-              <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                <h3 className="font-semibold text-green-900 mb-2">
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.2)' }}>
+                <h3 className="font-semibold mb-2" style={{ color: 'var(--djmp-text)' }}>
                   Work in Progress
                 </h3>
-                <p className="text-sm text-green-700 mb-4">
+                <p className="text-sm mb-4" style={{ color: 'var(--djmp-text-muted)' }}>
                   The technician is currently working on your request. You will
                   be notified when the work is completed.
                 </p>
 
-                <div className="bg-white p-3 rounded-lg">
-                  <p className="text-xs text-green-600 mb-1">
+                <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface)', borderColor: 'var(--djmp-border)' }}>
+                  <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>
                     Scheduled Time
                   </p>
-                  <p className="font-medium text-green-900">
+                  <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
                     {request.scheduled_time || '-'}
                   </p>
                 </div>
@@ -304,11 +308,11 @@ export default function RequestDetail() {
             )}
 
             {request.status === 'pending' && (
-              <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
-                <h3 className="font-semibold text-yellow-900 mb-2">
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(234, 179, 8, 0.1)', borderColor: 'rgba(234, 179, 8, 0.2)' }}>
+                <h3 className="font-semibold mb-2" style={{ color: 'var(--djmp-text)' }}>
                   Waiting for Review
                 </h3>
-                <p className="text-sm text-yellow-700">
+                <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
                   Your request has been submitted and is waiting for officer
                   review/assignment.
                 </p>
@@ -316,11 +320,11 @@ export default function RequestDetail() {
             )}
 
             {request.status === 'completed' && (
-              <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                <h3 className="font-semibold text-green-900 mb-2">
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.2)' }}>
+                <h3 className="font-semibold mb-2" style={{ color: 'var(--djmp-text)' }}>
                   Work Completed
                 </h3>
-                <p className="text-sm text-green-700">
+                <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
                   This maintenance request has been completed.
                 </p>
               </div>
