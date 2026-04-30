@@ -207,32 +207,7 @@ export default function MaintenanceRequestForm() {
             </Select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--djmp-text)' }}>
-              Priority Level <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: 'low', label: 'Low', color: 'rgba(59, 130, 246, 0.2)', activeColor: 'rgba(59, 130, 246, 0.1)' },
-                { value: 'medium', label: 'Medium', color: 'rgba(234, 179, 8, 0.2)', activeColor: 'rgba(234, 179, 8, 0.1)' },
-                { value: 'high', label: 'High', color: 'rgba(239, 68, 68, 0.2)', activeColor: 'rgba(239, 68, 68, 0.1)' },
-              ].map((priority) => (
-                <button
-                  key={priority.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, priority: priority.value })}
-                  disabled={submitting}
-                  className={`px-4 py-3 rounded-lg border-2 transition-all`}
-                  style={{
-                    background: formData.priority === priority.value ? priority.activeColor : 'var(--djmp-input-bg)',
-                    borderColor: formData.priority === priority.value ? 'var(--accent-500)' : priority.color,
-                  }}
-                >
-                  <span className="font-medium" style={{ color: 'var(--djmp-text)' }}>{priority.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: 'var(--djmp-text)' }}>
