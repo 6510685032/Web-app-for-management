@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import api from "../utils/api";
+import { useTheme } from "./ThemeContext";
 
 
 export type UserRole = "resident" | "officer" | "technician" | "admin";
@@ -14,6 +15,8 @@ export interface User {
   unit_number?: string;
   phone?: string;
   joinDate?: string;
+  theme_mode?: 'light' | 'dark';
+  theme_accent?: string;
 }
 
 interface UserContextType {
@@ -29,6 +32,7 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { setMode, setAccent } = useTheme();
 
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
@@ -62,11 +66,20 @@ export function UserProvider({ children }: { children: ReactNode }) {
           phone: data.user.phone || "",
           unit_number: data.user.unit_number || data.user.house_number || "",
           joinDate: data.user.joinDate || "",
+          theme_mode: data.user.theme_mode || "dark",
+          theme_accent: data.user.theme_accent || "blue",
         };
 
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("access_token", data.access);
+
+        if (userData.theme_mode) {
+          setMode(userData.theme_mode as any);
+        }
+        if (userData.theme_accent) {
+          setAccent(userData.theme_accent as any);
+        }
 
         if (data.refresh) {
           localStorage.setItem("refresh_token", data.refresh);

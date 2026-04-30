@@ -70,6 +70,18 @@ class UserProfile(models.Model):
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    theme_mode = models.CharField(
+        max_length=10,
+        default="dark",
+        choices=[("light", "Light"), ("dark", "Dark")],
+        help_text="Preferred UI theme"
+    )
+    theme_accent = models.CharField(
+        max_length=20,
+        default="blue",
+        help_text="Preferred UI accent color"
+    )
 
     def __str__(self):
         return f"{self.user.username} - {self.get_user_type_display()}"

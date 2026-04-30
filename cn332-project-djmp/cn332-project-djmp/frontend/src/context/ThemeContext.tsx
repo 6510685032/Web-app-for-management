@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useLayoutEffect } from 'react';
+import api from '../utils/api';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -178,10 +179,38 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(theme));
   }, [theme]);
 
-  const setMode = (mode: ThemeMode) => setTheme((t) => ({ ...t, mode }));
-  const setAccent = (accent: AccentColor) => setTheme((t) => ({ ...t, accent }));
-  const toggleMode = () =>
-    setTheme((t) => ({ ...t, mode: t.mode === 'light' ? 'dark' : 'light' }));
+  const syncTheme = async (mode: ThemeMode, accent: AccentColor) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        await api.patch('/me/', { theme_mode: mode, theme_accent: accent });
+      }
+    } catch (error) {
+      console.error('Failed to sync theme with backend:', error);
+    }
+  };
+
+  const setMode = (mode: ThemeMode) => {
+    setTheme((t) => {
+      syncTheme(mode, t.accent);
+      return { ...t, mode };
+    });
+  };
+
+  const setAccent = (accent: AccentColor) => {
+    setTheme((t) => {
+      syncTheme(t.mode, accent);
+      return { ...t, accent };
+    });
+  };
+
+  const toggleMode = () => {
+    setTheme((t) => {
+      const newMode = t.mode === 'light' ? 'dark' : 'light';
+      syncTheme(newMode, t.accent);
+      return { ...t, mode: newMode };
+    });
+  };
 
   return (
     <ThemeContext.Provider value={{ theme, setMode, setAccent, toggleMode }}>

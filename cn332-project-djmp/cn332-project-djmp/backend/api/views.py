@@ -120,6 +120,8 @@ def serialize_user(user_obj: User, profile=None):
         "phone": get_field_value(profile, "phone_number", "") or "",
         "unit_number": get_field_value(profile, "house_number", "") or "",
         "joinDate": user_obj.date_joined.strftime("%Y-%m-%d") if user_obj.date_joined else None,
+        "theme_mode": get_field_value(profile, "theme_mode", "dark") or "dark",
+        "theme_accent": get_field_value(profile, "theme_accent", "blue") or "blue",
     }
 
     if model_has_field(UserProfile, "specialty"):
@@ -565,6 +567,12 @@ def me(request):
 
             if model_has_field(UserProfile, "specialty") and "specialty" in data:
                 set_field_if_exists(profile, "specialty", (data.get("specialty") or "").strip())
+
+            if model_has_field(UserProfile, "theme_mode") and "theme_mode" in data:
+                set_field_if_exists(profile, "theme_mode", (data.get("theme_mode") or "dark").strip())
+
+            if model_has_field(UserProfile, "theme_accent") and "theme_accent" in data:
+                set_field_if_exists(profile, "theme_accent", (data.get("theme_accent") or "blue").strip())
 
             profile.save()
 
