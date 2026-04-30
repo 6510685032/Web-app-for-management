@@ -13,10 +13,12 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
+  isEnabled: boolean;
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotification: (id: string) => void;
+  toggleEnabled: (value: boolean) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -51,10 +53,21 @@ const mockNotifications: Notification[] = [
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [isEnabled, setIsEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('djmp_notifications_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const toggleEnabled = (value: boolean) => {
+    setIsEnabled(value);
+    localStorage.setItem('djmp_notifications_enabled', JSON.stringify(value));
+  };
+
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    if (!isEnabled) return;
+    
     const newNotification: Notification = {
       ...notification,
       id: Date.now().toString(),
@@ -83,10 +96,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       value={{
         notifications,
         unreadCount,
+        isEnabled,
         addNotification,
         markAsRead,
         markAllAsRead,
         clearNotification,
+        toggleEnabled,
       }}
     >
       {children}

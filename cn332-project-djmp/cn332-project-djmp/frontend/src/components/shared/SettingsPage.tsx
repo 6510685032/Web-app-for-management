@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '../../context/UserContext';
 import { useTheme, AccentColor } from '../../context/ThemeContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 // ── Accent colour catalogue ──────────────────────────────
 const ACCENTS: { key: AccentColor; label: string; bg: string; gradient: string }[] = [
@@ -77,6 +78,53 @@ function SettingRow({ icon, title, description, status }: SettingRowProps) {
         <ChevronRight className="w-5 h-5" style={{ color: 'var(--djmp-text-muted)' }} />
       </div>
     </button>
+  );
+}
+
+// ── Toggle setting row (interactive) ─────────────────────
+type ToggleRowProps = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onToggle: () => void;
+};
+function ToggleRow({ icon, title, description, enabled, onToggle }: ToggleRowProps) {
+  return (
+    <div
+      className="w-full flex items-center justify-between rounded-2xl p-4 transition-colors text-left"
+      style={{
+        background: 'var(--djmp-surface-2)',
+        border: '1px solid var(--djmp-border)',
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+          style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-600)' }}
+        >
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-base font-semibold" style={{ color: 'var(--djmp-text)' }}>
+            {title}
+          </h3>
+          <p className="text-sm mt-1" style={{ color: 'var(--djmp-text-muted)' }}>
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0 ml-4">
+        <button
+          onClick={onToggle}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
+          style={enabled ? { background: 'var(--accent-gradient)' } : { background: 'rgba(150, 150, 150, 0.3)' }}
+          type="button"
+        >
+          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -318,6 +366,9 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const role = user?.role || 'resident';
+  
+  // Notification Preferences from Global Context
+  const { isEnabled, toggleEnabled } = useNotifications();
 
   const handleBackToDashboard = () => navigate(`/${role}`);
 
@@ -378,11 +429,12 @@ export default function SettingsPage() {
               title="Notifications & Alerts"
               subtitle="Control how the system informs you about requests, updates, and announcements."
             >
-              <SettingRow
+              <ToggleRow
                 icon={<Bell size={22} />}
                 title="Push Notifications"
                 description="Receive instant updates for maintenance progress, approvals, and important alerts."
-                status="Enabled"
+                enabled={isEnabled}
+                onToggle={() => toggleEnabled(!isEnabled)}
               />
               <SettingRow
                 icon={<FileText size={22} />}

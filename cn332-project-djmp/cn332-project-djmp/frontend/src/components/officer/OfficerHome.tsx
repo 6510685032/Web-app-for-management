@@ -250,6 +250,7 @@ export default function OfficerHome() {
               <div className="p-5 flex-shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--djmp-text)' }}>Technicians</h2>
                 <button 
+                  onClick={() => navigate('/officer/schedule')}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
                   style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-500)' }}
                 >
@@ -282,6 +283,7 @@ export default function OfficerHome() {
                     return (
                       <div key={tech.id} className="p-3 rounded-xl transition-colors flex items-center justify-between cursor-pointer group" 
                         style={{ border: '1px solid transparent' }}
+                        onClick={() => navigate('/officer/schedule')}
                         onMouseEnter={e => {
                           e.currentTarget.style.background = 'var(--djmp-surface-2)';
                           e.currentTarget.style.borderColor = 'var(--djmp-border)';
@@ -322,7 +324,10 @@ export default function OfficerHome() {
                <div className="relative z-10">
                  <h3 className="text-white font-bold text-lg mb-1">Need Help?</h3>
                  <p className="text-white/90 text-xs mb-5">Contact support team</p>
-                 <button className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20">
+                 <button 
+                    onClick={() => navigate('/support')}
+                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20 cursor-pointer"
+                 >
                     <Headset className="w-4 h-4" />
                     Contact Support
                  </button>
