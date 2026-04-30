@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { Bell, User, LogOut, Settings, Building2, ChevronDown, X } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
+import { Bell, User, LogOut, Settings, Building2, ChevronDown, X, Sun, Moon } from 'lucide-react';
 
 export default function TopNavigation() {
   const { user, logout } = useUser();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotification } = useNotifications();
+  const { theme, toggleMode } = useTheme();
   const navigate = useNavigate();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -24,63 +26,26 @@ export default function TopNavigation() {
         setShowProfile(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    setShowProfile(false);
-    logout();
-    navigate('/');
-  };
-
-  const handleOpenProfile = () => {
-    navigate('/profile');
-    setShowProfile(false);
-  };
-
-  const handleOpenSettings = () => {
-    navigate('/settings');
-    setShowProfile(false);
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'officer':
-        return 'bg-blue-100 text-blue-700 border-blue-200';
-      case 'technician':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'resident':
-        return 'bg-orange-100 text-orange-700 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
+  const handleLogout = () => { setShowProfile(false); logout(); navigate('/'); };
+  const handleOpenProfile = () => { navigate('/profile'); setShowProfile(false); };
+  const handleOpenSettings = () => { navigate('/settings'); setShowProfile(false); };
 
   const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'System Administrator';
-      case 'officer':
-        return 'Juristic Officer';
-      case 'technician':
-        return 'Technician';
-      case 'resident':
-        return 'Resident';
-      default:
-        return role;
-    }
+    const map: Record<string, string> = {
+      admin: 'System Admin', officer: 'Juristic Officer',
+      technician: 'Technician', resident: 'Resident',
+    };
+    return map[role] || role;
   };
 
   const formatTime = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const diff = Date.now() - date.getTime();
+    const hours = Math.floor(diff / 3600000);
     const days = Math.floor(hours / 24);
-
     if (days > 0) return `${days}d ago`;
     if (hours > 0) return `${hours}h ago`;
     return 'Just now';
@@ -88,42 +53,92 @@ export default function TopNavigation() {
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'U';
 
+  const dropdownStyle: React.CSSProperties = {
+    background: 'var(--djmp-nav-bg)',
+    border: '1px solid var(--djmp-border)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+  };
+
   return (
-    <nav className="bg-white border-b border-blue-100 sticky top-0 z-50 shadow-sm">
+    <nav
+      className="glass-nav sticky top-0 z-50"
+      style={{ transition: 'background 0.3s' }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+
+          {/* Brand */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px var(--accent-glow)' }}
+            >
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-blue-900">JuristicPro</h1>
-              <p className="text-xs text-blue-600">Housing Estate Management</p>
+              <h1 className="font-bold gradient-text text-lg leading-none">JuristicPro</h1>
+              <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>
+                Housing Estate Management
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+
+            {/* Dark/Light toggle */}
+            <button
+              onClick={toggleMode}
+              className="p-2 rounded-lg transition-colors"
+              style={{
+                color: 'var(--djmp-text-muted)',
+                background: 'transparent',
+              }}
+              title={theme.mode === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+            >
+              {theme.mode === 'dark'
+                ? <Sun className="w-5 h-5" />
+                : <Moon className="w-5 h-5" />
+              }
+            </button>
+
+            {/* Notifications */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="relative p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--djmp-text-muted)' }}
               >
                 <Bell className="w-6 h-6" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                  <span
+                    className="absolute top-1 right-1 w-5 h-5 text-white text-xs rounded-full flex items-center justify-center font-medium avatar-ring"
+                    style={{ background: '#ef4444' }}
+                  >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-blue-100 overflow-hidden">
-                  <div className="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
-                    <h3 className="font-semibold text-blue-900">Notifications</h3>
+                <div
+                  className="absolute right-0 mt-2 w-96 rounded-2xl overflow-hidden fade-in-up"
+                  style={dropdownStyle}
+                >
+                  <div
+                    className="p-4 flex justify-between items-center"
+                    style={{ borderBottom: '1px solid var(--djmp-border)' }}
+                  >
+                    <h3 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
+                      Notifications
+                    </h3>
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllAsRead}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        className="text-xs font-medium"
+                        style={{ color: 'var(--accent-600)' }}
                       >
                         Mark all as read
                       </button>
@@ -132,42 +147,53 @@ export default function TopNavigation() {
 
                   <div className="max-h-96 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-8 text-center text-blue-400">
-                        <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <div className="p-8 text-center" style={{ color: 'var(--djmp-text-muted)' }}>
+                        <Bell className="w-12 h-12 mx-auto mb-2 opacity-40" />
                         <p>No notifications</p>
                       </div>
                     ) : (
                       notifications.map((notif) => (
                         <div
                           key={notif.id}
-                          className={`p-4 border-b border-blue-50 hover:bg-blue-50/50 transition-colors ${
-                            !notif.read ? 'bg-blue-50/30' : ''
-                          }`}
+                          className="p-4 transition-colors"
+                          style={{
+                            borderBottom: '1px solid var(--djmp-border)',
+                            background: !notif.read ? 'var(--accent-shimmer)' : 'transparent',
+                          }}
                         >
                           <div className="flex justify-between items-start gap-2">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium text-blue-900">{notif.title}</h4>
+                                <h4 className="font-medium" style={{ color: 'var(--djmp-text)' }}>
+                                  {notif.title}
+                                </h4>
                                 {!notif.read && (
-                                  <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+                                  <span
+                                    className="w-2 h-2 rounded-full"
+                                    style={{ background: 'var(--accent-500)' }}
+                                  />
                                 )}
                               </div>
-                              <p className="text-sm text-blue-600 mb-2">{notif.message}</p>
-                              <p className="text-xs text-blue-400">{formatTime(notif.timestamp)}</p>
+                              <p className="text-sm mb-2" style={{ color: 'var(--djmp-text-muted)' }}>
+                                {notif.message}
+                              </p>
+                              <p className="text-xs" style={{ color: 'var(--djmp-text-muted)', opacity: 0.7 }}>
+                                {formatTime(notif.timestamp)}
+                              </p>
                             </div>
-
                             <button
                               onClick={() => clearNotification(notif.id)}
-                              className="text-blue-400 hover:text-blue-600 p-1"
+                              style={{ color: 'var(--djmp-text-muted)' }}
+                              className="p-1 hover:opacity-70 transition-opacity"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           </div>
-
                           {!notif.read && (
                             <button
                               onClick={() => markAsRead(notif.id)}
-                              className="text-xs text-blue-600 hover:text-blue-700 mt-2 font-medium"
+                              className="text-xs font-medium mt-2"
+                              style={{ color: 'var(--accent-600)' }}
                             >
                               Mark as read
                             </button>
@@ -180,67 +206,86 @@ export default function TopNavigation() {
               )}
             </div>
 
+            {/* Profile */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setShowProfile(!showProfile)}
-                className="flex items-center gap-3 p-2 pr-3 hover:bg-blue-50 rounded-lg transition-colors"
+                className="flex items-center gap-3 p-2 pr-3 rounded-xl transition-colors"
+                style={{ background: showProfile ? 'var(--accent-shimmer)' : 'transparent' }}
               >
-                <div className="w-9 h-9 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-white"
+                  style={{ background: 'var(--accent-gradient)' }}
+                >
                   {userInitial}
                 </div>
-
                 <div className="text-left hidden md:block">
-                  <p className="text-sm font-medium text-blue-900">{user?.name || 'User'}</p>
-                  <p className="text-xs text-blue-500">{getRoleLabel(user?.role || '')}</p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--djmp-text)' }}>
+                    {user?.name || 'User'}
+                  </p>
+                  <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>
+                    {getRoleLabel(user?.role || '')}
+                  </p>
                 </div>
-
-                <ChevronDown className="w-4 h-4 text-blue-600" />
+                <ChevronDown className="w-4 h-4" style={{ color: 'var(--djmp-text-muted)' }} />
               </button>
 
               {showProfile && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-blue-100 overflow-hidden">
-                  <div className="p-4 bg-blue-50 border-b border-blue-100">
+                <div
+                  className="absolute right-0 mt-2 w-72 rounded-2xl overflow-hidden fade-in-up"
+                  style={dropdownStyle}
+                >
+                  <div className="p-4" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium text-lg">
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center font-semibold text-white text-lg"
+                        style={{ background: 'var(--accent-gradient)' }}
+                      >
                         {userInitial}
                       </div>
                       <div>
-                        <p className="font-medium text-blue-900">{user?.name || 'User'}</p>
-                        <p className="text-sm text-blue-600">{user?.email || '-'}</p>
+                        <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
+                          {user?.name || 'User'}
+                        </p>
+                        <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
+                          {user?.email || '-'}
+                        </p>
                       </div>
                     </div>
-
                     <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(
-                        user?.role || ''
-                      )}`}
+                      className="inline-block px-3 py-1 rounded-full text-xs font-medium"
+                      style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-700)' }}
                     >
                       {getRoleLabel(user?.role || '')}
                     </span>
                   </div>
 
                   <div className="p-2">
-                    <button
-                      onClick={handleOpenProfile}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>View Profile</span>
-                    </button>
+                    {[
+                      { icon: <User className="w-5 h-5" />, label: 'View Profile', action: handleOpenProfile },
+                      { icon: <Settings className="w-5 h-5" />, label: 'Settings', action: handleOpenSettings },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        onClick={item.action}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
+                        style={{ color: 'var(--djmp-text)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-shimmer)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
 
-                    <button
-                      onClick={handleOpenSettings}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Settings className="w-5 h-5" />
-                      <span>Settings</span>
-                    </button>
-
-                    <div className="border-t border-blue-100 my-2"></div>
+                    <div style={{ borderTop: '1px solid var(--djmp-border)', margin: '4px 0' }} />
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
+                      style={{ color: '#ef4444' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                     >
                       <LogOut className="w-5 h-5" />
                       <span>Sign Out</span>

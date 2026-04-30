@@ -94,10 +94,14 @@ def safe_image_urls(obj):
         return []
 
     urls = []
+    base_url = getattr(settings, "BACKEND_URL", "http://127.0.0.1:8000")
     try:
         for item in obj.images.all():
             if getattr(item, "image", None):
-                urls.append(item.image.url)
+                url = item.image.url
+                if url.startswith("/"):
+                    url = base_url + url
+                urls.append(url)
     except Exception:
         pass
     return urls
@@ -164,6 +168,8 @@ def serialize_request(req, include_resident=True):
         data["resident"] = f"{req.resident.first_name} {req.resident.last_name}".strip() or req.resident.username
         data["resident_id"] = req.resident_id
         data["unit"] = get_field_value(resident_profile, "house_number", "") or ""
+        data["resident_phone"] = get_field_value(resident_profile, "phone_number", "") or ""
+        data["resident_email"] = req.resident.email or ""
 
     if model_has_field(MaintenanceRequest, "deadline"):
         data["deadline"] = req.deadline.isoformat() if getattr(req, "deadline", None) else None

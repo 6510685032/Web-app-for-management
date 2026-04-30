@@ -10,7 +10,7 @@ export default function AdminDashboard() {
   // ไม่ต้องเช็คสิทธิ์ตรงนี้แล้ว เพราะ ProtectedRoute ใน App.tsx จัดการให้แล้วแบบ 100%
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="djmp-bg">
       <TopNavigation />
       
       {/* พื้นที่แสดงเนื้อหาที่จะเปลี่ยนไปตาม URL ด้านบน */}
