@@ -15,7 +15,7 @@ http://127.0.0.1:8000/api/users/
 
 frontend
 
-cd fronted
+cd frontend
 npm install   
 npm run dev
 
