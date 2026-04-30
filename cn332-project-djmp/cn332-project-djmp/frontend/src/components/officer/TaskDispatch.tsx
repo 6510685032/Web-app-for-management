@@ -29,7 +29,6 @@ export default function TaskDispatch() {
   const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
   const [selectedTechnician, setSelectedTechnician] = useState<number | null>(null);
   const [scheduledDate, setScheduledDate] = useState('');
-  const [deadlineDate, setDeadlineDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
@@ -73,9 +72,6 @@ export default function TaskDispatch() {
         status: 'assigned',
         scheduled_date: scheduledDate,
       };
-      if (deadlineDate) {
-        updates.deadline = `${deadlineDate}T23:59:59`;
-      }
 
       await api.patch(`/maintenance-requests/${selectedRequest}/manage/`, updates);
 
@@ -84,7 +80,6 @@ export default function TaskDispatch() {
       setSelectedRequest(null);
       setSelectedTechnician(null);
       setScheduledDate('');
-      setDeadlineDate('');
       alert('Task assigned successfully!');
     } catch (error: any) {
       console.error('Error assigning task:', error);
@@ -261,7 +256,7 @@ export default function TaskDispatch() {
         <div className="fixed bottom-0 left-0 right-0 p-6 z-40 fade-in-up">
           <div className="max-w-7xl mx-auto glass-card shadow-2xl p-6 border-none" style={{ background: 'var(--djmp-nav-bg)', borderTop: '1px solid var(--djmp-border)' }}>
             <div className="flex flex-col md:flex-row items-end gap-6">
-              <div className="flex-1 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+              <div className="flex-1 grid sm:grid-cols-3 gap-4 w-full">
                 <div className="p-4 rounded-xl" style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)' }}>
                   <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Selected Request</p>
                   <p className="font-bold text-sm" style={{ color: 'var(--djmp-text)' }}>
@@ -290,19 +285,6 @@ export default function TaskDispatch() {
                   />
                 </div>
                 
-                <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--djmp-text-muted)' }}>Deadline (Optional)</label>
-                  <input
-                    type="date"
-                    value={deadlineDate}
-                    onChange={(e) => setDeadlineDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 rounded-xl outline-none text-sm font-medium transition-all"
-                    style={{ background: 'var(--djmp-input-bg)', border: '1px solid var(--djmp-input-border)', color: 'var(--djmp-text)' }}
-                    onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-500)'}
-                    onBlur={e => e.currentTarget.style.borderColor = 'var(--djmp-input-border)'}
-                  />
-                </div>
               </div>
               
               <div className="flex gap-3 w-full md:w-auto">
@@ -311,7 +293,6 @@ export default function TaskDispatch() {
                     setSelectedRequest(null);
                     setSelectedTechnician(null);
                     setScheduledDate('');
-                    setDeadlineDate('');
                   }}
                   className="px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
                   style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', color: 'var(--djmp-text)' }}
