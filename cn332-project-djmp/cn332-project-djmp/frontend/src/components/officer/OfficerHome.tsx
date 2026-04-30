@@ -81,10 +81,10 @@ export default function OfficerHome() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          
+
           {/* Main Left Column (wider) */}
           <div className="lg:col-span-8 flex flex-col gap-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
-            
+
             {/* Quick Actions (Wide Banners) */}
             <div className="flex flex-col gap-3">
               <button 
@@ -103,89 +103,13 @@ export default function OfficerHome() {
                 </div>
                 <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
               </button>
-
-              <button 
-                onClick={() => navigate('/officer/kanban')} 
-                className="w-full p-5 rounded-xl transition-all group flex items-center justify-between cursor-pointer"
-                style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--djmp-surface-2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--djmp-surface)'}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-shimmer)' }}>
-                    <Columns className="w-6 h-6" style={{ color: 'var(--accent-500)' }} />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <h3 className="text-base font-bold tracking-wide" style={{ color: 'var(--djmp-text)' }}>Kanban Board</h3>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--djmp-text-muted)' }}>Drag & drop queue</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 transition-all group-hover:translate-x-1" style={{ color: 'var(--djmp-text-muted)' }} />
-              </button>
-
-              <button 
-                onClick={() => navigate('/officer/dispatch')} 
-                className="w-full p-5 rounded-xl transition-all group flex items-center justify-between cursor-pointer"
-                style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--djmp-surface-2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--djmp-surface)'}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-shimmer)' }}>
-                    <UserCheck className="w-6 h-6" style={{ color: 'var(--accent-500)' }} />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <h3 className="text-base font-bold tracking-wide" style={{ color: 'var(--djmp-text)' }}>Dispatch Tasks</h3>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--djmp-text-muted)' }}>Assign technicians</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 transition-all group-hover:translate-x-1" style={{ color: 'var(--djmp-text-muted)' }} />
-              </button>
-
-              <button 
-                onClick={() => navigate('/officer/schedule')} 
-                className="w-full p-5 rounded-xl transition-all group flex items-center justify-between cursor-pointer"
-                style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--djmp-surface-2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--djmp-surface)'}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-shimmer)' }}>
-                    <CalendarDays className="w-6 h-6" style={{ color: 'var(--accent-500)' }} />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <h3 className="text-base font-bold tracking-wide" style={{ color: 'var(--djmp-text)' }}>Tech Schedule</h3>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--djmp-text-muted)' }}>Work timetable</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 transition-all group-hover:translate-x-1" style={{ color: 'var(--djmp-text-muted)' }} />
-              </button>
-
-              <button 
-                onClick={() => navigate('/officer/analytics')} 
-                className="w-full p-5 rounded-xl transition-all group flex items-center justify-between cursor-pointer"
-                style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--djmp-surface-2)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'var(--djmp-surface)'}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-shimmer)' }}>
-                    <BarChart3 className="w-6 h-6" style={{ color: 'var(--accent-500)' }} />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <h3 className="text-base font-bold tracking-wide" style={{ color: 'var(--djmp-text)' }}>Analytics</h3>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--djmp-text-muted)' }}>Performance data</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 transition-all group-hover:translate-x-1" style={{ color: 'var(--djmp-text-muted)' }} />
-              </button>
             </div>
 
             {/* Dashboard 4 Boxes */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
               {statCards.map((stat, i) => {
                 const Icon = stat.icon;
-                const glows = ['stat-glow-blue','stat-glow-yellow','stat-glow-blue','stat-glow-red'];
+                const glows = ['stat-glow-blue', 'stat-glow-yellow', 'stat-glow-blue', 'stat-glow-red'];
                 return (
                   <div key={stat.label} className={`glass-card p-5 ${glows[i]}`}>
                     {loading ? (
@@ -213,7 +137,7 @@ export default function OfficerHome() {
               </div>
               <div>
                 {loading ? (
-                  <div className="p-6 space-y-3">{[1,2,3].map(i=><div key={i} className="shimmer-skeleton h-12" />)}</div>
+                  <div className="p-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="shimmer-skeleton h-12" />)}</div>
                 ) : pendingRequests.length === 0 ? (
                   <div className="p-6 text-center text-sm" style={{ color: 'var(--djmp-text-muted)' }}>No pending requests</div>
                 ) : (
@@ -245,11 +169,11 @@ export default function OfficerHome() {
 
           {/* Right Sidebar - Technicians */}
           <div className="lg:col-span-4 fade-in-up flex flex-col gap-6" style={{ animationDelay: '0.2s' }}>
-            
+
             <div className="glass-card flex flex-col h-[550px]">
               <div className="p-5 flex-shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
                 <h2 className="text-lg font-bold" style={{ color: 'var(--djmp-text)' }}>Technicians</h2>
-                <button 
+                <button
                   onClick={() => navigate('/officer/schedule')}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
                   style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-500)' }}
@@ -257,11 +181,11 @@ export default function OfficerHome() {
                   View All
                 </button>
               </div>
-              
+
               {/* Scrollable list area */}
               <div className="p-4 space-y-2 overflow-y-auto custom-scrollbar flex-1">
                 {loading ? (
-                  <div className="space-y-3">{[1,2,3,4,5].map(i=><div key={i} className="shimmer-skeleton h-16 rounded-xl" />)}</div>
+                  <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <div key={i} className="shimmer-skeleton h-16 rounded-xl" />)}</div>
                 ) : technicians.length === 0 ? (
                   <div className="text-center py-8 text-sm" style={{ color: 'var(--djmp-text-muted)' }}>No technicians found</div>
                 ) : (
@@ -281,7 +205,7 @@ export default function OfficerHome() {
                     }
 
                     return (
-                      <div key={tech.id} className="p-3 rounded-xl transition-colors flex items-center justify-between cursor-pointer group" 
+                      <div key={tech.id} className="p-3 rounded-xl transition-colors flex items-center justify-between cursor-pointer group"
                         style={{ border: '1px solid transparent' }}
                         onClick={() => navigate('/officer/schedule')}
                         onMouseEnter={e => {
@@ -315,23 +239,23 @@ export default function OfficerHome() {
 
             {/* Need Help Card */}
             <div className="rounded-2xl p-6 relative overflow-hidden shadow-lg" style={{ background: 'var(--accent-gradient)' }}>
-               {/* Decorative background circle */}
-               <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
-               <div className="absolute right-4 bottom-4 opacity-20 transform -rotate-12">
-                 <Headset className="w-20 h-20 text-white" />
-               </div>
-               
-               <div className="relative z-10">
-                 <h3 className="text-white font-bold text-lg mb-1">Need Help?</h3>
-                 <p className="text-white/90 text-xs mb-5">Contact support team</p>
-                 <button 
-                    onClick={() => navigate('/support')}
-                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20 cursor-pointer"
-                 >
-                    <Headset className="w-4 h-4" />
-                    Contact Support
-                 </button>
-               </div>
+              {/* Decorative background circle */}
+              <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
+              <div className="absolute right-4 bottom-4 opacity-20 transform -rotate-12">
+                <Headset className="w-20 h-20 text-white" />
+              </div>
+
+              <div className="relative z-10">
+                <h3 className="text-white font-bold text-lg mb-1">Need Help?</h3>
+                <p className="text-white/90 text-xs mb-5">Contact support team</p>
+                <button
+                  onClick={() => navigate('/support')}
+                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20 cursor-pointer"
+                >
+                  <Headset className="w-4 h-4" />
+                  Contact Support
+                </button>
+              </div>
             </div>
 
           </div>

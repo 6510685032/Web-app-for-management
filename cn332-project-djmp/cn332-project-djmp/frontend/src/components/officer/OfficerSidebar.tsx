@@ -1,14 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ClipboardList, 
-  Columns, 
-  UserCheck, 
-  CalendarDays, 
-  BarChart3, 
-  Settings, 
-  HelpCircle 
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Columns,
+  UserCheck,
+  CalendarDays,
+  BarChart3,
+  Settings,
+  HelpCircle
 } from 'lucide-react';
 
 export default function OfficerSidebar() {
@@ -27,10 +27,10 @@ export default function OfficerSidebar() {
   ];
 
   return (
-    <div 
-      className="hidden md:flex flex-col w-64 flex-shrink-0" 
-      style={{ 
-        borderRight: '1px solid var(--djmp-border)', 
+    <div
+      className="hidden md:flex flex-col w-64 flex-shrink-0"
+      style={{
+        borderRight: '1px solid var(--djmp-border)',
         background: 'var(--djmp-surface-2)',
         height: 'calc(100vh - 64px)' // Assuming TopNavigation is ~64px
       }}
@@ -44,13 +44,12 @@ export default function OfficerSidebar() {
               to={item.path}
               end={item.exact}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive 
-                    ? 'text-white shadow-lg' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                  ? 'text-white shadow-lg'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`
               }
-              style={({ isActive }) => 
+              style={({ isActive }) =>
                 isActive ? { background: 'var(--accent-gradient)' } : {}
               }
             >
@@ -59,7 +58,7 @@ export default function OfficerSidebar() {
             </NavLink>
           );
         })}
-        
+
         <div className="my-6 border-t border-white/10" />
 
         {bottomItems.map((item) => {
@@ -69,13 +68,12 @@ export default function OfficerSidebar() {
               key={item.name}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                  isActive 
-                    ? 'text-white shadow-lg' 
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                  ? 'text-white shadow-lg'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`
               }
-              style={({ isActive }) => 
+              style={({ isActive }) =>
                 isActive ? { background: 'var(--accent-gradient)' } : {}
               }
             >
@@ -93,7 +91,7 @@ export default function OfficerSidebar() {
             <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
           </div>
           <p className="text-[10px]" style={{ color: 'var(--djmp-text-muted)' }}>All systems operational</p>
-          
+
           <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-center text-[10px]">
             <span style={{ color: 'var(--djmp-text-muted)' }}>Version</span>
             <span className="font-mono text-white">V2.4.0 STABLE</span>
