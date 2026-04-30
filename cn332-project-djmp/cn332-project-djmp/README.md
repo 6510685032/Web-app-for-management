@@ -1,4 +1,5 @@
 //ต้องdowload node.jsก่อนต้องเพิ่มเข้าenvด้วยนะpathไม่งันมันไม่ทำงาน
+//password postgres คือ 1234
 
 backend
 

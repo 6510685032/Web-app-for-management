@@ -84,10 +84,11 @@ export default function OfficerHome() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="djmp-bg">
+    <div className="max-w-7xl mx-auto p-6" style={{ position: 'relative', zIndex: 1 }}>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-blue-900 mb-2">Juristic Officer Dashboard</h1>
-        <p className="text-blue-600">Welcome back, {user?.name}! Here's your management overview</p>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--djmp-text)' }}>Juristic Officer Dashboard</h1>
+        <p style={{ color: 'var(--djmp-text-muted)' }}>Welcome back, {user?.name}! Here's your management overview</p>
       </div>
 
       {/* Quick Actions */}
@@ -145,15 +146,18 @@ export default function OfficerHome() {
 
       {/* Dashboard 4 Boxes */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        {statCards.map((stat) => {
+        {statCards.map((stat, i) => {
           const Icon = stat.icon;
+          const glows = ['stat-glow-blue','stat-glow-yellow','stat-glow-blue','stat-glow-red'];
           return (
-            <div key={stat.label} className="bg-white p-6 rounded-xl shadow-lg border border-blue-100">
-              <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mb-4 flex-shrink-0`}>
-                <Icon className="w-6 h-6 text-white flex-shrink-0" />
-              </div>
-              <p className="text-3xl font-bold text-blue-900 mb-1 truncate">{loading ? '-' : stat.value}</p>
-              <p className="text-sm text-blue-600 truncate">{stat.label}</p>
+            <div key={stat.label} className={`glass-card p-6 ${glows[i]}`}>
+              {loading ? (
+                <><div className="shimmer-skeleton w-12 h-12 rounded-lg mb-4" /><div className="shimmer-skeleton h-8 w-16 mb-2" /><div className="shimmer-skeleton h-4 w-24" /></>
+              ) : (
+                <><div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center mb-4`}><Icon className="w-6 h-6 text-white" /></div>
+                  <p className="text-3xl font-bold mb-1" style={{ color: 'var(--djmp-text)' }}>{stat.value}</p>
+                  <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>{stat.label}</p></>
+              )}
             </div>
           );
         })}
@@ -162,48 +166,39 @@ export default function OfficerHome() {
       <div className="grid md:grid-cols-3 gap-6">
         {/* Pending Requests */}
         <div className="md:col-span-2">
-          <div className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
-            <div className="p-6 border-b border-blue-100 bg-blue-50">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-xl font-semibold text-blue-900">Pending Review</h2>
-                  <p className="text-sm text-blue-600 mt-1">Requests awaiting your approval</p>
-                </div>
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
-                  {pendingRequests.length} Pending
-                </span>
+          <div className="glass-card overflow-hidden">
+            <div className="p-6 flex justify-between items-center" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
+              <div>
+                <h2 className="text-xl font-semibold" style={{ color: 'var(--djmp-text)' }}>Pending Review</h2>
+                <p className="text-sm mt-1" style={{ color: 'var(--djmp-text-muted)' }}>Requests awaiting your approval</p>
               </div>
+              <span className="px-3 py-1 rounded-full text-sm font-medium" style={{ background: 'rgba(245,158,11,0.15)', color: '#b45309' }}>
+                {pendingRequests.length} Pending
+              </span>
             </div>
-            <div className="divide-y divide-blue-100">
+            <div style={{ borderBottom: '1px solid var(--djmp-border)' }}>
               {loading ? (
-                <div className="p-6 text-center text-blue-600">Loading...</div>
+                <div className="p-6 space-y-3">{[1,2,3].map(i=><div key={i} className="shimmer-skeleton h-12" />)}</div>
               ) : pendingRequests.length === 0 ? (
-                <div className="p-6 text-center text-blue-500">No pending requests</div>
+                <div className="p-6 text-center" style={{ color: 'var(--djmp-text-muted)' }}>No pending requests</div>
               ) : (
                 pendingRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="p-4 hover:bg-blue-50 cursor-pointer transition-colors"
+                  <div key={request.id} className="p-4 cursor-pointer transition-colors"
+                    style={{ borderTop: '1px solid var(--djmp-border)' }}
                     onClick={() => navigate('/officer/requests')}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-shimmer)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-blue-900">{request.request_code}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${getPriorityColor(request.priority)}`}>
-                            {request.priority}
-                          </span>
+                          <span className="font-medium" style={{ color: 'var(--djmp-text)' }}>{request.request_code}</span>
+                          <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-700)' }}>{request.priority}</span>
                         </div>
-                        <p className="text-sm text-blue-700 mb-1">
-                          {request.resident} • Unit {request.unit}
-                        </p>
-                        <p className="text-sm text-blue-600">
-                          {request.category}: {request.description}
-                        </p>
+                        <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>{request.resident} • Unit {request.unit}</p>
+                        <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>{request.category}: {request.description}</p>
                       </div>
-                      <div className="text-right text-xs text-blue-500">
-                        <p>{request.created_at}</p>
-                      </div>
+                      <div className="text-right text-xs" style={{ color: 'var(--djmp-text-muted)' }}><p>{request.created_at}</p></div>
                     </div>
                   </div>
                 ))
@@ -214,35 +209,32 @@ export default function OfficerHome() {
 
         {/* Active Technicians */}
         <div>
-          <div className="bg-white rounded-xl shadow-lg border border-blue-100 overflow-hidden">
-            <div className="p-6 border-b border-blue-100 bg-blue-50">
-              <h2 className="text-xl font-semibold text-blue-900 flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Technicians
+          <div className="glass-card overflow-hidden">
+            <div className="p-6" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
+              <h2 className="text-xl font-semibold flex items-center gap-2" style={{ color: 'var(--djmp-text)' }}>
+                <Users className="w-5 h-5" />Technicians
               </h2>
             </div>
             <div className="p-4 space-y-3">
               {loading ? (
-                <div className="text-center text-blue-600 py-4">Loading...</div>
+                <div className="space-y-3">{[1,2,3].map(i=><div key={i} className="shimmer-skeleton h-16 rounded-xl" />)}</div>
               ) : technicians.length === 0 ? (
-                <div className="text-center text-blue-500 py-4">No technicians found</div>
+                <div className="text-center py-4" style={{ color: 'var(--djmp-text-muted)' }}>No technicians found</div>
               ) : (
                 technicians.map((tech) => (
-                  <div key={tech.id} className="p-3 bg-blue-50 rounded-lg">
+                  <div key={tech.id} className="p-3 rounded-xl" style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)' }}>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-medium">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center font-semibold text-white" style={{ background: 'var(--accent-gradient)' }}>
                         {tech.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-blue-900">{tech.name}</p>
-                        <p className="text-xs text-blue-600">{tech.specialty}</p>
+                        <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>{tech.name}</p>
+                        <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>{tech.specialty}</p>
                       </div>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-blue-700">Active: {tech.active_tasks} | Done: {tech.completed_tasks}</span>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        tech.active_tasks < 4 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
+                      <span style={{ color: 'var(--djmp-text-muted)' }}>Active: {tech.active_tasks} | Done: {tech.completed_tasks}</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={tech.active_tasks < 4 ? { background: 'rgba(16,185,129,0.15)', color: '#047857' } : { background: 'rgba(245,158,11,0.15)', color: '#b45309' }}>
                         {tech.active_tasks < 4 ? 'Available' : 'Busy'}
                       </span>
                     </div>
@@ -253,6 +245,7 @@ export default function OfficerHome() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

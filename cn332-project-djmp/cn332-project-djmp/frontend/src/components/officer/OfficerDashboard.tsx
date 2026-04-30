@@ -20,7 +20,7 @@ export default function OfficerDashboard() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="djmp-bg">
       <TopNavigation />
       <Routes>
         <Route path="/" element={<OfficerHome />} />

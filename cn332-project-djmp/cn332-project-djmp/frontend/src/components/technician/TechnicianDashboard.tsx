@@ -17,7 +17,7 @@ export default function TechnicianDashboard() {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="djmp-bg">
       <TopNavigation />
       <Routes>
         <Route path="/" element={<TechnicianHome />} />

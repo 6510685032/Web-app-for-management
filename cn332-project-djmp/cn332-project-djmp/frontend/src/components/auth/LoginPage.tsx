@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import { Building2, Lock, Mail, AlertCircle } from 'lucide-react';
+import { Building2, Lock, User, Eye, EyeOff, ArrowRight, ShieldCheck, Layers, Lock as LockIcon } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -13,144 +14,365 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate(`/${user.role}`, { replace: true });
-    }
+    if (user) navigate(`/${user.role}`, { replace: true });
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-
     try {
-      const success = await login(username, password);
-
-      if (!success) {
-        setError('Username หรือ Password ไม่ถูกต้อง');
-      }
-    } catch (err) {
-      setError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+      const ok = await login(username, password);
+      if (!ok) setError('Invalid username or password');
+    } catch {
+      setError('Connection error. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
-        {/* Left Branding */}
-        <div className="text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-3 mb-6">
-            <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Building2 className="w-8 h-8 text-white" />
-            </div>
+    <div style={{
+      minHeight: '100vh',
+      background: 'radial-gradient(ellipse at 20% 30%, #1a0533 0%, #0d0118 40%, #000000 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '24px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* ── Cosmic background orbs ── */}
+      <div style={{
+        position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none',
+      }}>
+        {/* Left nebula */}
+        <div style={{
+          position: 'absolute',
+          top: '-10%', left: '-15%',
+          width: '60vw', height: '60vw',
+          maxWidth: '700px', maxHeight: '700px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(120,40,200,0.45) 0%, transparent 70%)',
+          filter: 'blur(60px)',
+          animation: 'djmp-float 14s ease-in-out infinite',
+        }} />
+        {/* Right nebula */}
+        <div style={{
+          position: 'absolute',
+          bottom: '-5%', right: '-10%',
+          width: '50vw', height: '50vw',
+          maxWidth: '600px', maxHeight: '600px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(160,50,220,0.35) 0%, transparent 70%)',
+          filter: 'blur(70px)',
+          animation: 'djmp-float-slow 18s ease-in-out infinite',
+        }} />
+        {/* Center glow */}
+        <div style={{
+          position: 'absolute',
+          top: '40%', left: '50%',
+          transform: 'translate(-50%,-50%)',
+          width: '40vw', height: '40vw',
+          maxWidth: '500px', maxHeight: '500px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(100,20,180,0.2) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+        }} />
+        {/* Subtle light streaks */}
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: `
+            linear-gradient(135deg, transparent 40%, rgba(180,80,255,0.04) 50%, transparent 60%),
+            linear-gradient(225deg, transparent 40%, rgba(120,40,200,0.03) 50%, transparent 60%)
+          `,
+        }} />
+      </div>
 
-            <div>
-              <h1 className="text-3xl font-bold text-blue-900">JuristicPro</h1>
-              <p className="text-blue-600 text-sm">Housing Estate Management</p>
-            </div>
+      {/* ── Login Card ── */}
+      <div style={{
+        position: 'relative', zIndex: 10,
+        width: '100%', maxWidth: '420px',
+        background: 'rgba(12,8,24,0.80)',
+        border: '1px solid rgba(180,100,255,0.25)',
+        borderRadius: '24px',
+        backdropFilter: 'blur(32px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(32px) saturate(150%)',
+        boxShadow: `
+          0 0 0 1px rgba(180,100,255,0.15),
+          0 25px 80px rgba(0,0,0,0.8),
+          0 0 60px rgba(120,40,200,0.15),
+          inset 0 1px 0 rgba(255,255,255,0.08)
+        `,
+        padding: '40px 36px 36px',
+        animation: 'djmp-fadeInUp 0.5s ease',
+      }}>
+
+        {/* App Icon */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+          <div style={{
+            width: '72px', height: '72px',
+            borderRadius: '20px',
+            background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 8px 32px rgba(139,92,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2)',
+          }}>
+            <Building2 style={{ width: '38px', height: '38px', color: 'white' }} />
           </div>
+        </div>
 
-          <h2 className="text-4xl font-bold text-blue-900 mb-4">
-            Digital Juristic Management Platform
+        {/* Title */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <h1 style={{
+            fontSize: '28px', fontWeight: 800, color: '#ffffff',
+            letterSpacing: '-0.5px', margin: '0 0 4px',
+          }}>
+            JuristicPro
+          </h1>
+          <p style={{
+            fontSize: '11px', fontWeight: 600, color: 'rgba(255,255,255,0.45)',
+            letterSpacing: '3px', textTransform: 'uppercase', margin: '0 0 20px',
+          }}>
+            Housing Estate Management
+          </p>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#ffffff', margin: '0 0 4px' }}>
+            Sign In
           </h2>
-
-          <p className="text-lg text-blue-700 mb-8">
-            Streamline maintenance, complaints, and operations for your housing estate.
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+            Enter your credentials to access the platform
           </p>
         </div>
 
-        {/* Login Form */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-10">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-blue-900 mb-2">Welcome Back</h2>
-            <p className="text-blue-600">Sign in to access your dashboard</p>
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {error && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(239,68,68,0.15)',
+              border: '1px solid rgba(239,68,68,0.35)',
+              borderRadius: '10px',
+              color: '#fca5a5',
+              fontSize: '13px',
+              textAlign: 'center',
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* Username */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '11px', fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)',
+              letterSpacing: '1.5px', textTransform: 'uppercase',
+              marginBottom: '8px',
+            }}>
+              Username
+            </label>
+            <div style={{ position: 'relative' }}>
+              <User style={{
+                position: 'absolute', left: '14px', top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px', height: '18px',
+                color: 'rgba(255,255,255,0.35)',
+                pointerEvents: 'none',
+              }} />
+              <input
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="admin_juristic"
+                required
+                disabled={submitting}
+                style={{
+                  width: '100%', height: '48px',
+                  paddingLeft: '44px', paddingRight: '16px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '12px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s, background 0.2s',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = 'rgba(139,92,246,0.7)';
+                  e.target.style.background = 'rgba(139,92,246,0.08)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.target.style.background = 'rgba(255,255,255,0.06)';
+                }}
+              />
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Username */}
-            <div>
-              <label className="block text-sm font-medium text-blue-900 mb-2">
-                Username
-              </label>
-
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
-
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter username"
-                  required
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-blue-900 mb-2">
+          {/* Password */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{
+                fontSize: '11px', fontWeight: 700,
+                color: 'rgba(255,255,255,0.5)',
+                letterSpacing: '1.5px', textTransform: 'uppercase',
+              }}>
                 Password
               </label>
+              <button
+                type="button"
+                style={{
+                  fontSize: '12px', fontWeight: 600,
+                  color: '#a78bfa', background: 'none', border: 'none',
+                  cursor: 'pointer', padding: 0,
+                }}
+              >
+                Forgot?
+              </button>
+            </div>
+            <div style={{ position: 'relative' }}>
+              <Lock style={{
+                position: 'absolute', left: '14px', top: '50%',
+                transform: 'translateY(-50%)',
+                width: '18px', height: '18px',
+                color: 'rgba(255,255,255,0.35)',
+                pointerEvents: 'none',
+              }} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••••"
+                required
+                disabled={submitting}
+                style={{
+                  width: '100%', height: '48px',
+                  paddingLeft: '44px', paddingRight: '44px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '12px',
+                  color: '#ffffff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  transition: 'border-color 0.2s, background 0.2s',
+                  boxSizing: 'border-box',
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = 'rgba(139,92,246,0.7)';
+                  e.target.style.background = 'rgba(139,92,246,0.08)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'rgba(255,255,255,0.12)';
+                  e.target.style.background = 'rgba(255,255,255,0.06)';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                style={{
+                  position: 'absolute', right: '14px', top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
+                  color: 'rgba(255,255,255,0.4)',
+                  display: 'flex', alignItems: 'center',
+                }}
+              >
+                {showPassword
+                  ? <EyeOff style={{ width: '18px', height: '18px' }} />
+                  : <Eye style={{ width: '18px', height: '18px' }} />}
+              </button>
+            </div>
+          </div>
 
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
+          {/* Sign In Button */}
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              marginTop: '8px',
+              height: '52px',
+              width: '100%',
+              background: submitting
+                ? 'rgba(139,92,246,0.5)'
+                : 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)',
+              border: 'none',
+              borderRadius: '14px',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: 700,
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              boxShadow: submitting ? 'none' : '0 8px 24px rgba(139,92,246,0.45)',
+              transition: 'opacity 0.2s, transform 0.15s, box-shadow 0.2s',
+              letterSpacing: '0.3px',
+            }}
+            onMouseEnter={e => {
+              if (!submitting) {
+                (e.currentTarget as HTMLButtonElement).style.opacity = '0.92';
+                (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+              }
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.opacity = '1';
+              (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
+            }}
+          >
+            {submitting ? 'Authenticating...' : (
+              <>Sign In <ArrowRight style={{ width: '18px', height: '18px' }} /></>
+            )}
+          </button>
+        </form>
 
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter password"
-                  required
-                  disabled={submitting}
-                />
+        {/* ── Security Footer ── */}
+        <div style={{
+          marginTop: '28px',
+          padding: '16px',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '14px',
+        }}>
+          {/* Shield row */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            marginBottom: '14px',
+          }}>
+            <ShieldCheck style={{ width: '16px', height: '16px', color: '#a78bfa' }} />
+            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>
+              Secure Enterprise Connection Established
+            </span>
+          </div>
+
+          {/* Version tags */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden' }}>
+            {[
+              { icon: <Layers style={{ width: '16px', height: '16px' }} />, label: 'V2.4.0' },
+              { icon: <ShieldCheck style={{ width: '16px', height: '16px' }} />, label: 'STABLE' },
+              { icon: <LockIcon style={{ width: '16px', height: '16px' }} />, label: 'PROTECTED' },
+            ].map(({ icon, label }) => (
+              <div key={label} style={{
+                padding: '10px 4px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                color: 'rgba(167,139,250,0.7)',
+              }}>
+                {icon}
+                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1px', color: 'rgba(255,255,255,0.35)' }}>
+                  {label}
+                </span>
               </div>
-            </div>
-
-            {/* Remember */}
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="w-4 h-4" disabled={submitting} />
-                <span className="text-sm text-blue-700">Remember me</span>
-              </label>
-
-              <a className="text-sm text-blue-600 hover:text-blue-700">
-                Forgot password?
-              </a>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Signing In...' : 'Sign In'}
-            </button>
-          </form>
-
-          {/* Notice */}
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 mb-2">
-              Notice
-            </p>
-
-            <p className="text-xs text-blue-700">
-              ระบบเชื่อมต่อกับฐานข้อมูลจริงจาก backend แล้ว
-            </p>
+            ))}
           </div>
         </div>
+
+        {/* Bottom link */}
+        <p style={{
+          textAlign: 'center', marginTop: '20px', marginBottom: 0,
+          fontSize: '13px', color: 'rgba(255,255,255,0.35)',
+        }}>
+          Don't have an account?{' '}
+          <span style={{ color: '#a78bfa', fontWeight: 600, cursor: 'pointer' }}>
+            Contact management
+          </span>
+        </p>
       </div>
     </div>
   );

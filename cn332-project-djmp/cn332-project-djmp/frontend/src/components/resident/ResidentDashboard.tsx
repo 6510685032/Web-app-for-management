@@ -39,7 +39,7 @@ export default function ResidentDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-blue-50">
+    <div className="djmp-bg">
       <TopNavigation />
       {showAnnouncement && announcements.length > 0 && (
         <AnnouncementModal announcements={announcements} onClose={() => setShowAnnouncement(false)} />
