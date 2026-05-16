@@ -491,16 +491,6 @@ export default function TaskDetail() {
                   <span className="text-xs font-bold truncate" style={{ color: 'var(--djmp-text)' }}>{task.resident_email || '-'}</span>
                 </div>
               </div>
-
-              {task.resident_phone && (
-                <a
-                  href={`tel:${task.resident_phone}`}
-                  className="w-full bg-white/5 py-4 rounded-xl font-black text-xs uppercase tracking-widest text-center block transition-all hover:bg-white/10 active:scale-[0.98]"
-                  style={{ color: 'var(--djmp-text)', border: '1px solid var(--djmp-border)' }}
-                >
-                  Contact Resident
-                </a>
-              )}
             </div>
 
             {/* Action Cards */}

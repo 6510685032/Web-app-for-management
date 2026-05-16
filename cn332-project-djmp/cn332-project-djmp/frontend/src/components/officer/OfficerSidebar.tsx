@@ -23,7 +23,6 @@ export default function OfficerSidebar() {
 
   const bottomItems = [
     { name: 'Settings', path: '/settings', icon: Settings },
-    { name: 'Help & Support', path: '/support', icon: HelpCircle },
   ];
 
   return (

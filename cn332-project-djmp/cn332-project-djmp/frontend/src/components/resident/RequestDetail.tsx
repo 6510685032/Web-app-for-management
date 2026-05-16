@@ -273,13 +273,6 @@ export default function RequestDetail() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    className="w-full mt-4 text-white py-2 rounded-lg transition-all font-medium hover:brightness-110 shadow-sm"
-                    style={{ background: 'var(--accent-gradient)' }}
-                  >
-                    Contact Technician
-                  </button>
                 </>
               ) : (
                 <p style={{ color: 'var(--djmp-text-muted)' }}>No technician assigned yet</p>

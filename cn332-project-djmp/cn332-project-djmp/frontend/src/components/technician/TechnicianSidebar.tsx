@@ -17,9 +17,6 @@ export default function TechnicianSidebar() {
     { name: 'Dashboard', path: '/technician', icon: LayoutDashboard, exact: true },
     { name: 'My Tasks', path: '/technician/tasks', icon: ClipboardList },
     { name: 'Calendar', path: '/technician/calendar', icon: CalendarDays },
-    { name: 'Work Orders', path: '/technician/work-orders', icon: Briefcase },
-    { name: 'Reports', path: '/technician/reports', icon: BarChart3 },
-    { name: 'Knowledge Base', path: '/technician/knowledge', icon: BookOpen },
   ];
 
 

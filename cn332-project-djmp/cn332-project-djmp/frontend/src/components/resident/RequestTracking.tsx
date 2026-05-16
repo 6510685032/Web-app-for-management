@@ -135,12 +135,6 @@ export default function RequestTracking() {
                 style={{ background: 'var(--djmp-input-bg)', borderColor: 'var(--djmp-input-border)', borderStyle: 'solid', borderWidth: '1px', color: 'var(--djmp-text)' }}
               />
             </div>
-            <button className="px-6 py-3 rounded-lg transition-colors font-medium flex items-center gap-2 border hover:opacity-80"
-              style={{ background: 'var(--djmp-surface-2)', color: 'var(--djmp-text)', borderColor: 'var(--djmp-border)' }}
-            >
-              <Filter className="w-5 h-5" />
-              More Filters
-            </button>
           </div>
         </div>
 

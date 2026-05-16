@@ -237,27 +237,6 @@ export default function OfficerHome() {
               </div>
             </div>
 
-            {/* Need Help Card */}
-            <div className="rounded-2xl p-6 relative overflow-hidden shadow-lg" style={{ background: 'var(--accent-gradient)' }}>
-              {/* Decorative background circle */}
-              <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
-              <div className="absolute right-4 bottom-4 opacity-20 transform -rotate-12">
-                <Headset className="w-20 h-20 text-white" />
-              </div>
-
-              <div className="relative z-10">
-                <h3 className="text-white font-bold text-lg mb-1">Need Help?</h3>
-                <p className="text-white/90 text-xs mb-5">Contact support team</p>
-                <button
-                  onClick={() => navigate('/support')}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20 cursor-pointer"
-                >
-                  <Headset className="w-4 h-4" />
-                  Contact Support
-                </button>
-              </div>
-            </div>
-
           </div>
 
         </div>

@@ -219,16 +219,6 @@ export default function LoginPage() {
               }}>
                 Password
               </label>
-              <button
-                type="button"
-                style={{
-                  fontSize: '12px', fontWeight: 600,
-                  color: '#a78bfa', background: 'none', border: 'none',
-                  cursor: 'pointer', padding: 0,
-                }}
-              >
-                Forgot?
-              </button>
             </div>
             <div style={{ position: 'relative' }}>
               <Lock style={{
@@ -323,16 +313,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Bottom link */}
-        <p style={{
-          textAlign: 'center', marginTop: '20px', marginBottom: 0,
-          fontSize: '13px', color: 'rgba(255,255,255,0.35)',
-        }}>
-          Don't have an account?{' '}
-          <span style={{ color: '#a78bfa', fontWeight: 600, cursor: 'pointer' }}>
-            Contact management
-          </span>
-        </p>
       </div>
     </div>
   );

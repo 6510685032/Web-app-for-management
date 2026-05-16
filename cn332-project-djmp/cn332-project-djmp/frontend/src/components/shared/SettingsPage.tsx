@@ -436,42 +436,6 @@ export default function SettingsPage() {
                 enabled={isEnabled}
                 onToggle={() => toggleEnabled(!isEnabled)}
               />
-              <SettingRow
-                icon={<FileText size={22} />}
-                title="Announcement Alerts"
-                description="Choose whether you want to be notified when new community announcements are posted."
-                status="Active"
-              />
-              <SettingRow
-                icon={<Smartphone size={22} />}
-                title="Device Notifications"
-                description="Manage how alerts appear on your current device and browser."
-                status="This device"
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Privacy & Security"
-              subtitle="Review security-related options and control access to your account."
-            >
-              <SettingRow
-                icon={<Shield size={22} />}
-                title="Privacy Controls"
-                description="Review access permissions and how your account data is handled inside the system."
-                status="Protected"
-              />
-              <SettingRow
-                icon={<Lock size={22} />}
-                title="Password & Login Security"
-                description="Manage password safety, login sessions, and account protection preferences."
-                status="Secure"
-              />
-              <SettingRow
-                icon={<Database size={22} />}
-                title="Data Usage"
-                description="See how system information is used to support requests, records, and platform features."
-                status="Standard"
-              />
             </SectionCard>
 
             <SectionCard
@@ -486,64 +450,6 @@ export default function SettingsPage() {
               />
             </SectionCard>
 
-            <SectionCard
-              title="Help & Support"
-              subtitle="Find guidance, support channels, and useful information about the platform."
-            >
-              <SettingRow
-                icon={<HelpCircle size={22} />}
-                title="Support Center"
-                description="Get help with account issues, request workflows, and general platform usage."
-                status="Available"
-              />
-              <SettingRow
-                icon={<Info size={22} />}
-                title="About This System"
-                description="View platform information, version details, and general usage notes."
-                status="v1.0"
-              />
-            </SectionCard>
-          </div>
-
-          {/* Right column — info panels */}
-          <div className="space-y-6">
-            <div className="glass-card p-6" style={{ background: 'var(--djmp-surface)' }}>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--djmp-text)' }}>
-                Quick Notes
-              </h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'Notification Ready', desc: 'Stay updated with request progress and important community messages.', color: 'var(--accent-shimmer)', textColor: 'var(--accent-700)' },
-                  { label: 'Security Status', desc: 'Your account area is currently protected by role-based access.', color: 'rgba(16,185,129,0.1)', textColor: '#047857' },
-                  { label: 'Preference Live', desc: 'Changes to Appearance are applied instantly — no page reload needed.', color: 'rgba(245,158,11,0.1)', textColor: '#b45309' },
-                ].map((n) => (
-                  <div
-                    key={n.label}
-                    className="rounded-2xl p-4"
-                    style={{ background: n.color, border: `1px solid ${n.color}` }}
-                  >
-                    <div className="font-semibold text-sm" style={{ color: n.textColor }}>
-                      {n.label}
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: n.textColor, opacity: 0.85 }}>
-                      {n.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div
-              className="text-white rounded-3xl p-6"
-              style={{ background: 'linear-gradient(135deg,#1e293b,#0f172a)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <h2 className="text-xl font-bold mb-3">About Settings</h2>
-              <ul className="space-y-2 text-slate-300 text-sm leading-6">
-                <li>• Appearance changes take effect immediately.</li>
-                <li>• Personal details are on the Profile page.</li>
-                <li>• Your preferences are saved per-browser.</li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
