@@ -95,8 +95,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const clearNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+  const clearNotification = async (id: string) => {
+    try {
+      await api.delete(`/notifications/${id}/`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Failed to clear notification:', error);
+      // Still remove it from UI even if backend fails
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }
   };
 
   return (

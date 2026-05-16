@@ -41,6 +41,7 @@ urlpatterns = [
     # Notifications
     # =========================
     path("api/notifications/", views.list_notifications, name="list_notifications"),
+    path("api/notifications/<int:pk>/", views.delete_notification, name="delete_notification"),
     path("api/notifications/<int:pk>/mark-read/", views.mark_notification_read, name="mark_notification_read"),
     path("api/notifications/mark-all-read/", views.mark_all_notifications_read, name="mark_all_notifications_read"),
 

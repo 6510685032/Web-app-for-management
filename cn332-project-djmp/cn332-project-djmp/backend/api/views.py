@@ -1226,3 +1226,14 @@ def mark_all_notifications_read(request):
         return Response({"status": "success"})
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_notification(request, pk):
+    try:
+        notif = Notification.objects.get(pk=pk, user=request.user)
+        notif.delete()
+        return Response({"status": "success"})
+    except Notification.DoesNotExist:
+        return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
