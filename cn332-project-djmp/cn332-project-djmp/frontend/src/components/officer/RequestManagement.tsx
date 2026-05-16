@@ -112,62 +112,59 @@ export default function RequestManagement() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <button
-        onClick={() => navigate('/officer')}
-        className="flex items-center gap-2 mb-6 font-medium transition-opacity hover:opacity-80"
-        style={{ color: 'var(--accent-600)' }}
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Back to Dashboard
-      </button>
-
-      <div className="glass-card rounded-xl shadow-lg overflow-hidden" style={{ background: 'var(--djmp-surface)' }}>
-        <div className="p-6 text-white" style={{ background: 'var(--accent-gradient)' }}>
-          <h1 className="text-2xl font-bold mb-2">Request Management</h1>
-          <p className="opacity-90">Review, approve, set priority/deadline, and manage maintenance requests</p>
+    <div style={{ overflowY: 'auto', height: '100%' }}>
+      <header style={{ padding: '32px 40px 24px', borderBottom: '1px solid var(--rule-soft)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>REQUESTS</div>
+            <h1 className="display" style={{ margin: 0, fontSize: 38, lineHeight: 1.06 }}>
+              All
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, color: 'var(--ink-3)', letterSpacing: '-0.01em' }}> requests.</span>
+            </h1>
+            <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 13.5 }}>
+              {requests.length} total · {statusCounts.pending} awaiting review · {statusCounts['in-progress']} in flight.
+            </p>
+          </div>
         </div>
+      </header>
 
-        {/* Tabs */}
-        <div className="border-b px-6" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
-          <div className="flex gap-4 overflow-x-auto">
+      <div style={{ padding: '20px 40px 48px' }}>
+        {/* Filter chips */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {[
               { key: 'pending', label: 'Pending' },
               { key: 'assigned', label: 'Assigned' },
               { key: 'in-progress', label: 'In Progress' },
               { key: 'completed', label: 'Completed' },
-              { key: 'pending_approval', label: 'รออนุมัติ' },
+              { key: 'pending_approval', label: 'Awaiting approval' },
               { key: 'all', label: 'All' },
             ].map((tab) => (
               <button
                 key={tab.key}
                 onClick={() => setSelectedTab(tab.key)}
-                className={`px-4 py-3 font-medium border-b-2 transition-colors whitespace-nowrap`}
+                className="chip"
                 style={{
-                  borderBottomColor: selectedTab === tab.key ? 'var(--accent-500)' : 'transparent',
-                  color: selectedTab === tab.key ? 'var(--djmp-text)' : 'var(--djmp-text-muted)'
+                  background: selectedTab === tab.key ? 'var(--ink)' : 'transparent',
+                  color: selectedTab === tab.key ? 'var(--paper)' : 'var(--ink-2)',
+                  borderColor: selectedTab === tab.key ? 'var(--ink)' : 'var(--rule)',
                 }}
               >
                 {tab.label}
-                <span className="ml-2 px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--accent-100)', color: 'var(--accent-700)' }}>
+                <span className="numerals" style={{ opacity: 0.6, fontSize: 11, marginLeft: 2 }}>
                   {statusCounts[tab.key as keyof typeof statusCounts] ?? 0}
                 </span>
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Search */}
-        <div className="p-6 border-b" style={{ borderColor: 'var(--djmp-border)' }}>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5" style={{ color: 'var(--djmp-text-muted)' }} />
+          <div style={{ position: 'relative' }}>
+            <Search size={13} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--ink-4)' }} />
             <input
-              type="text"
-              placeholder="Search by ID, resident, category..."
+              className="in"
+              placeholder="Search by ID, resident, category…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-              style={{ background: 'var(--djmp-input-bg)', borderColor: 'var(--djmp-input-border)', borderStyle: 'solid', borderWidth: '1px', color: 'var(--djmp-text)' }}
+              style={{ paddingLeft: 30, width: 260 }}
             />
           </div>
         </div>
@@ -179,20 +176,21 @@ export default function RequestManagement() {
           ) : filteredRequests.length === 0 ? (
             <div className="p-8 text-center" style={{ color: 'var(--djmp-text-muted)' }}>No requests found</div>
           ) : (
-            <table className="w-full">
-              <thead className="border-b" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Resident / Unit</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Category</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Priority</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Approval</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Deadline</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{ color: 'var(--djmp-text-muted)' }}>Actions</th>
+            <div className="card" style={{ overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: 'var(--paper-soft)', borderBottom: '1px solid var(--rule-soft)' }}>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">ID</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">RESIDENT</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">CATEGORY</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">PRIORITY</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">STATUS</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">APPROVAL</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">DEADLINE</th>
+                  <th style={{ padding: '10px 18px' }} className="eyebrow">ACTIONS</th>
                 </tr>
               </thead>
-              <tbody style={{ background: 'var(--djmp-surface)' }}>
+              <tbody>
                 {filteredRequests.map((request) => {
                   const priColor = getPriorityColor(request.priority);
                   return (
@@ -277,14 +275,15 @@ export default function RequestManagement() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>
 
       {/* Detail/Manage Modal */}
       {showDetailModal && selectedRequest && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="glass-card rounded-xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(21,20,15,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, backdropFilter: 'blur(2px)' }}>
+          <div className="card" style={{ background: 'var(--paper-card)', width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-lift)', maxHeight: 'calc(100vh - 48px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.request_code}</h3>
               <button 

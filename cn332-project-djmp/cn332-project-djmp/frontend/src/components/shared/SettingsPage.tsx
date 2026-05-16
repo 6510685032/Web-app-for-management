@@ -24,19 +24,19 @@ import { useNotifications } from '../../context/NotificationContext';
 // ── Accent colour catalogue ──────────────────────────────
 const ACCENTS: { key: AccentColor; label: string; bg: string; gradient: string }[] = [
   // JuristicPro design accents (primary)
-  { key: 'slate',      label: 'Slate',       bg: '#3B4A57', gradient: 'linear-gradient(135deg,#3B4A57,#222A33)' },
-  { key: 'forest',     label: 'Forest',      bg: '#2D5A47', gradient: 'linear-gradient(135deg,#2D5A47,#1F3F31)' },
-  { key: 'terracotta', label: 'Terracotta',  bg: '#B85540', gradient: 'linear-gradient(135deg,#B85540,#963F2D)' },
-  { key: 'ink',        label: 'Ink',         bg: '#111318', gradient: 'linear-gradient(135deg,#111318,#000000)' },
+  { key: 'slate', label: 'Slate', bg: '#3B4A57', gradient: 'linear-gradient(135deg,#3B4A57,#222A33)' },
+  { key: 'forest', label: 'Forest', bg: '#2D5A47', gradient: 'linear-gradient(135deg,#2D5A47,#1F3F31)' },
+  { key: 'terracotta', label: 'Terracotta', bg: '#B85540', gradient: 'linear-gradient(135deg,#B85540,#963F2D)' },
+  { key: 'ink', label: 'Ink', bg: '#111318', gradient: 'linear-gradient(135deg,#111318,#000000)' },
   // Legacy accents
-  { key: 'blue',    label: 'Ocean Blue',    bg: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
-  { key: 'violet',  label: 'Deep Violet',   bg: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)' },
-  { key: 'emerald', label: 'Forest Green',  bg: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)' },
-  { key: 'rose',    label: 'Cherry Rose',   bg: '#f43f5e', gradient: 'linear-gradient(135deg,#f43f5e,#fb923c)' },
-  { key: 'amber',   label: 'Warm Amber',    bg: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#ef4444)' },
-  { key: 'cyan',    label: 'Crystal Cyan',  bg: '#06b6d4', gradient: 'linear-gradient(135deg,#06b6d4,#3b82f6)' },
-  { key: 'indigo',  label: 'Midnight Indigo', bg: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
-  { key: 'teal',    label: 'Pacific Teal',  bg: '#14b8a6', gradient: 'linear-gradient(135deg,#14b8a6,#3b82f6)' },
+  { key: 'blue', label: 'Ocean Blue', bg: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
+  { key: 'violet', label: 'Deep Violet', bg: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)' },
+  { key: 'emerald', label: 'Forest Green', bg: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)' },
+  { key: 'rose', label: 'Cherry Rose', bg: '#f43f5e', gradient: 'linear-gradient(135deg,#f43f5e,#fb923c)' },
+  { key: 'amber', label: 'Warm Amber', bg: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#ef4444)' },
+  { key: 'cyan', label: 'Crystal Cyan', bg: '#06b6d4', gradient: 'linear-gradient(135deg,#06b6d4,#3b82f6)' },
+  { key: 'indigo', label: 'Midnight Indigo', bg: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
+  { key: 'teal', label: 'Pacific Teal', bg: '#14b8a6', gradient: 'linear-gradient(135deg,#14b8a6,#3b82f6)' },
 ];
 
 // ── Simple setting row (non-interactive) ─────────────────
@@ -372,7 +372,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const { user } = useUser();
   const role = user?.role || 'resident';
-  
+
   // Notification Preferences from Global Context
   const { isEnabled, toggleEnabled } = useNotifications();
 
@@ -380,10 +380,10 @@ export default function SettingsPage() {
 
   const getRoleBadgeColor = (r: string) => {
     const map: Record<string, string> = {
-      admin:      'var(--accent-100)',
-      officer:    'var(--accent-100)',
+      admin: 'var(--accent-100)',
+      officer: 'var(--accent-100)',
       technician: 'var(--accent-100)',
-      resident:   'var(--accent-100)',
+      resident: 'var(--accent-100)',
     };
     return map[r] || 'var(--accent-100)';
   };
@@ -442,42 +442,6 @@ export default function SettingsPage() {
                 enabled={isEnabled}
                 onToggle={() => toggleEnabled(!isEnabled)}
               />
-              <SettingRow
-                icon={<FileText size={22} />}
-                title="Announcement Alerts"
-                description="Choose whether you want to be notified when new community announcements are posted."
-                status="Active"
-              />
-              <SettingRow
-                icon={<Smartphone size={22} />}
-                title="Device Notifications"
-                description="Manage how alerts appear on your current device and browser."
-                status="This device"
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Privacy & Security"
-              subtitle="Review security-related options and control access to your account."
-            >
-              <SettingRow
-                icon={<Shield size={22} />}
-                title="Privacy Controls"
-                description="Review access permissions and how your account data is handled inside the system."
-                status="Protected"
-              />
-              <SettingRow
-                icon={<Lock size={22} />}
-                title="Password & Login Security"
-                description="Manage password safety, login sessions, and account protection preferences."
-                status="Secure"
-              />
-              <SettingRow
-                icon={<Database size={22} />}
-                title="Data Usage"
-                description="See how system information is used to support requests, records, and platform features."
-                status="Standard"
-              />
             </SectionCard>
 
             <SectionCard
@@ -501,12 +465,6 @@ export default function SettingsPage() {
                 title="Support Center"
                 description="Get help with account issues, request workflows, and general platform usage."
                 status="Available"
-              />
-              <SettingRow
-                icon={<Info size={22} />}
-                title="About This System"
-                description="View platform information, version details, and general usage notes."
-                status="v1.0"
               />
             </SectionCard>
           </div>
@@ -537,18 +495,6 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-
-            <div
-              className="text-white rounded-3xl p-6"
-              style={{ background: 'linear-gradient(135deg,#1e293b,#0f172a)', border: '1px solid rgba(255,255,255,0.08)' }}
-            >
-              <h2 className="text-xl font-bold mb-3">About Settings</h2>
-              <ul className="space-y-2 text-slate-300 text-sm leading-6">
-                <li>• Appearance changes take effect immediately.</li>
-                <li>• Personal details are on the Profile page.</li>
-                <li>• Your preferences are saved per-browser.</li>
-              </ul>
             </div>
           </div>
         </div>

@@ -1,21 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext';
-import StatusBadge from '../shared/StatusBadge';
-import { 
-  ClipboardList, 
-  Clock, 
-  CheckCircle, 
-  TrendingUp, 
-  AlertCircle, 
-  Calendar, 
-  MapPin, 
-  Timer,
+import {
   ChevronRight,
-  Filter,
-  BarChart3,
-  Bell,
-  CheckCircle2
+  MapPin,
+  Clock,
+  CheckCircle2,
+  ClipboardList,
+  Phone,
 } from 'lucide-react';
 import api from '../../utils/api';
 
@@ -35,39 +27,43 @@ interface TaskItem {
   specialty_required: string;
 }
 
-function DeadlineCountdown({ deadline }: { deadline: string }) {
-  const [now, setNow] = useState(new Date());
+// ── JP priority pill ──
+function PriorityPill({ p }: { p: string }) {
+  const map: Record<string, { bg: string; fg: string }> = {
+    high:   { bg: 'var(--terracotta-soft)', fg: 'var(--terracotta)' },
+    medium: { bg: 'var(--ochre-soft)',      fg: 'var(--ochre)' },
+    low:    { bg: 'var(--rule-soft)',        fg: 'var(--ink-3)' },
+  };
+  const v = map[p] || map.low;
+  return <span className="pill" style={{ background: v.bg, color: v.fg }}>{p.charAt(0).toUpperCase() + p.slice(1)}</span>;
+}
 
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, { cls: string; label: string }> = {
+    assigned:    { cls: 'progress', label: 'Assigned'    },
+    'in-progress': { cls: 'progress', label: 'In Progress' },
+    pending:     { cls: 'pending',  label: 'Pending'     },
+    completed:   { cls: 'done',     label: 'Completed'   },
+    cancelled:   { cls: 'cancelled',label: 'Cancelled'   },
+  };
+  const v = map[status] || { cls: 'pending', label: status };
+  return <span className={`pill ${v.cls}`}><span className="dot" />{v.label}</span>;
+}
 
-  const deadlineDate = new Date(deadline);
-  const diff = deadlineDate.getTime() - now.getTime();
-  const isOverdue = diff < 0;
-  const absDiff = Math.abs(diff);
-
-  const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((absDiff / (1000 * 60 * 60)) % 24);
-  const minutes = Math.floor((absDiff / (1000 * 60)) % 60);
-
-  if (isOverdue) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/10 text-red-400 rounded-full text-[10px] font-bold border border-red-500/20">
-        <Timer className="w-3 h-3" />
-        OVERDUE: +{days > 0 ? `${days}d ` : ''}{hours}h {minutes}m
-      </span>
-    );
-  }
-
-  const urgencyColor = days < 1 ? 'text-red-400 bg-red-500/10 border-red-500/20' : days < 3 ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-
+function SectionHead({ eyebrow, title, italic, action }: {
+  eyebrow: string; title: string; italic?: string; action?: React.ReactNode;
+}) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 ${urgencyColor} rounded-full text-[10px] font-bold border`}>
-      <Timer className="w-3 h-3" />
-      {days > 0 ? `${days}d ` : ''}{hours}h {minutes}m
-    </span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 }}>
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 6 }}>{eyebrow}</div>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>
+          {title}
+          {italic && <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, color: 'var(--ink-3)' }}> {italic}</span>}
+        </h2>
+      </div>
+      {action && <div>{action}</div>}
+    </div>
   );
 }
 
@@ -78,328 +74,235 @@ export default function TechnicianHome() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const load = async () => {
       setLoading(true);
       try {
-        const response = await api.get('/tasks/my/');
-        setTasks(Array.isArray(response.data) ? response.data : []);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
+        const res = await api.get('/tasks/my/');
+        setTasks(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
     };
-    fetchTasks();
+    load();
   }, []);
 
-  const sortedTodayTasks = useMemo(() => {
-    const activeTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
-    const userSpecialty = (user as any)?.specialty || '';
+  const activeTasks = useMemo(() =>
+    tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled')
+      .sort((a, b) => {
+        const po: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        return (po[a.priority] ?? 2) - (po[b.priority] ?? 2);
+      }),
+    [tasks]
+  );
 
-    return activeTasks.sort((a, b) => {
-      const aEmergency = a.priority === 'high' && ['Electrical', 'Plumbing'].includes(a.category);
-      const bEmergency = b.priority === 'high' && ['Electrical', 'Plumbing'].includes(b.category);
-      if (aEmergency && !bEmergency) return -1;
-      if (!aEmergency && bEmergency) return 1;
+  const completed = tasks.filter(t => t.status === 'completed').length;
+  const rate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
 
-      if (userSpecialty) {
-        const aMatch = a.specialty_required === userSpecialty;
-        const bMatch = b.specialty_required === userSpecialty;
-        if (aMatch && !bMatch) return -1;
-        if (!aMatch && bMatch) return 1;
-      }
+  const firstName = user?.name?.split(' ')[0] ?? 'Technician';
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-      const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
-      return (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2);
-    });
-  }, [tasks, user]);
-
-  const stats = useMemo(() => {
-    const activeTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
-    const completedTasks = tasks.filter(t => t.status === 'completed');
-    const pendingStart = tasks.filter(t => t.status === 'assigned');
-    return [
-      { label: 'Active Tasks', value: String(activeTasks.length), icon: ClipboardList, color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-      { label: 'Completed', value: String(completedTasks.length), icon: CheckCircle2, color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-      { label: 'Pending Start', value: String(pendingStart.length), icon: Clock, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-      { label: 'Total Assigned', value: String(tasks.length), icon: BarChart3, color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-    ];
-  }, [tasks]);
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-400 bg-red-500/10 border-red-500/20';
-      case 'medium': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-      case 'low': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-      default: return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
-    }
-  };
+  const times = ['09:30', '10:30', '12:30', '14:00', '16:00'];
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
-      {/* Welcome */}
-      <div className="fade-in-up">
-        <h1 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'var(--djmp-text)' }}>
-          Welcome, {user?.name}!
-        </h1>
-        <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
-          Here's your task overview — sorted by priority and skill match
-        </p>
-      </div>
-
-      {/* Main Banner */}
-      <div 
-        onClick={() => navigate('/technician/tasks')}
-        className="relative group cursor-pointer overflow-hidden rounded-2xl p-8 transition-all hover:scale-[1.01] active:scale-[0.99] shadow-2xl"
-        style={{ background: 'var(--accent-gradient)' }}
-      >
-        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
-          <ClipboardList className="w-32 h-32" />
-        </div>
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-2">View All My Tasks</h2>
-            <p className="text-white/80">Manage your assigned maintenance tasks and updates</p>
+    <div style={{ overflowY: 'auto', height: '100%' }}>
+      {/* ── Page Header ── */}
+      <header style={{ padding: '32px 40px 24px', borderBottom: '1px solid var(--rule-soft)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>TODAY · {today.toUpperCase()}</div>
+            <h1 className="display" style={{ margin: 0, fontSize: 38, lineHeight: 1.06 }}>
+              {activeTasks.length} job{activeTasks.length !== 1 ? 's' : ''}
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, color: 'var(--ink-3)', letterSpacing: '-0.01em' }}> on the route.</span>
+            </h1>
+            <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 640 }}>
+              Good morning, Khun {firstName}. {activeTasks.length > 0
+                ? `Your next task is ${activeTasks[0]?.category} at Unit ${activeTasks[0]?.unit}.`
+                : 'You\'re all caught up — no active tasks today.'}
+            </p>
           </div>
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white group-hover:translate-x-2 transition-transform">
-            <ChevronRight className="w-6 h-6" />
-          </div>
-        </div>
-      </div>
-
-      {/* Statistics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div 
-              key={stat.label} 
-              className="glass-card p-6 border-none fade-in-up" 
-              style={{ 
-                background: 'var(--djmp-surface)', 
-                animationDelay: `${idx * 0.1}s`,
-                border: '1px solid var(--djmp-border)'
-              }}
+          <div style={{ flexShrink: 0 }}>
+            <button
+              onClick={() => navigate('/technician/tasks')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', fontSize: 13, fontWeight: 500, borderRadius: 6, border: 'none', background: 'var(--accent)', color: 'var(--accent-on)', cursor: 'pointer' }}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div 
-                  className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg"
-                  style={{ background: stat.bg, color: stat.color }}
+              <Phone size={13} /> Call dispatch
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div style={{ padding: '28px 40px 48px' }}>
+        {/* ── 4 KPI cards ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
+          {[
+            { label: "Today's jobs", value: activeTasks.length, suffix: 'scheduled', accent: true },
+            { label: 'Completed', value: completed, suffix: 'so far' },
+            { label: 'On-time rate', value: rate + '%', suffix: 'this period' },
+            { label: 'Total assigned', value: tasks.length, suffix: 'all time' },
+          ].map(c => (
+            <div key={c.label} className="card" style={{
+              padding: '18px 20px',
+              background: c.accent ? 'var(--accent-soft)' : 'var(--paper-card)',
+              borderColor: c.accent ? 'transparent' : 'var(--rule)',
+            }}>
+              <div className="eyebrow">{c.label}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 8 }}>
+                <span className="display numerals" style={{ fontSize: 38, lineHeight: 1, color: c.accent ? 'var(--accent)' : 'var(--ink)' }}>
+                  {loading ? '—' : c.value}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{c.suffix}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Two-column body ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)', gap: 32 }}>
+          {/* LEFT — task schedule */}
+          <section>
+            <SectionHead
+              eyebrow="ROUTE"
+              title="The day's"
+              italic="schedule"
+              action={
+                <button
+                  onClick={() => navigate('/technician/tasks')}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, background: 'transparent', border: 'none', color: 'var(--ink-3)', cursor: 'pointer' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
+                  onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
                 >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="h-8 w-16 opacity-30">
-                  {/* Simplified mini graph placeholder */}
-                  <svg viewBox="0 0 100 40" className="w-full h-full">
-                    <path 
-                      d="M0 35 Q 25 15, 50 25 T 100 10" 
-                      fill="none" 
-                      stroke={stat.color} 
-                      strokeWidth="3" 
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <p className="text-3xl font-bold" style={{ color: 'var(--djmp-text)' }}>
-                  {loading ? '-' : stat.value}
-                </p>
-                <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--djmp-text-muted)' }}>
-                  {stat.label}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
-        {/* Priority Queue */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="glass-card overflow-hidden border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-            <div className="p-6 border-b" style={{ borderColor: 'var(--djmp-border)', background: 'var(--djmp-surface-2)' }}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold" style={{ color: 'var(--djmp-text)' }}>Priority Queue</h2>
-                  <p className="text-xs mt-1" style={{ color: 'var(--djmp-text-muted)' }}>Tasks sorted by skill match + priority</p>
-                </div>
-                <div className="flex items-center gap-2">
-                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ background: 'var(--accent-100)', color: 'var(--accent-700)' }}>
-                    <ClipboardList className="w-3.5 h-3.5" />
-                    {sortedTodayTasks.length} Tasks
-                  </div>
-                  <button className="p-2 rounded-lg transition-colors" style={{ background: 'var(--djmp-surface-2)', color: 'var(--djmp-text-muted)' }}>
-                    <Filter className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Priority Filters UI mockup */}
-              <div className="flex items-center gap-2 mt-6">
-                 <button className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight" style={{ background: 'var(--accent-gradient)', color: 'white' }}>All</button>
-                 <button className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight border" style={{ borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>High</button>
-                 <button className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight border" style={{ borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>Medium</button>
-                 <button className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight border" style={{ borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>Low</button>
-              </div>
-            </div>
-
-            <div className="p-4">
+                  All tasks <ChevronRight size={12} />
+                </button>
+              }
+            />
+            <div className="card" style={{ overflow: 'hidden' }}>
               {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <div className="w-8 h-8 border-4 border-t-transparent animate-spin rounded-full" style={{ borderColor: 'var(--accent-500) transparent transparent transparent' }}></div>
-                  <p className="text-sm font-medium" style={{ color: 'var(--djmp-text-muted)' }}>Scanning database...</p>
+                <div style={{ padding: 32, textAlign: 'center', fontSize: 13, color: 'var(--ink-4)' }}>Loading…</div>
+              ) : activeTasks.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 999, background: 'var(--paper-2)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                    <CheckCircle2 size={20} style={{ color: 'var(--ink-3)' }} />
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--ink)' }}>No scheduled jobs</div>
+                  <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>Enjoy a quiet day. Dispatch will assign new tasks as they come in.</div>
                 </div>
-              ) : sortedTodayTasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ background: 'var(--djmp-surface-2)' }}>
-                    <CheckCircle2 className="w-8 h-8 opacity-20" style={{ color: 'var(--djmp-text)' }} />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold" style={{ color: 'var(--djmp-text)' }}>No active tasks</h3>
-                    <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>You're all caught up! Great job! 🥳</p>
-                  </div>
-                  <button 
-                    onClick={() => navigate('/technician/tasks')}
-                    className="text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all"
-                    style={{ color: 'var(--accent-500)' }}
+              ) : activeTasks.slice(0, 5).map((task, i) => {
+                const t = times[i] || '—';
+                return (
+                  <button
+                    key={task.id}
+                    onClick={() => navigate(`/technician/tasks/${task.id}`)}
+                    style={{
+                      width: '100%', padding: '16px 20px',
+                      borderBottom: i < Math.min(activeTasks.length, 5) - 1 ? '1px solid var(--rule-soft)' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 18,
+                      textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper-soft)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    View History <ChevronRight className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {sortedTodayTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      onClick={() => navigate(`/technician/tasks/${task.id}`)}
-                      className="group p-5 rounded-xl border border-transparent transition-all cursor-pointer hover:scale-[1.01]"
-                      style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)' }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent-500)'}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--djmp-border)'}
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-bold text-sm" style={{ color: 'var(--djmp-text)' }}>{task.request_code}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getPriorityColor(task.priority)}`}>
-                              {task.priority}
-                            </span>
-                            <StatusBadge status={task.status as any} size="sm" />
-                            {task.deadline && <DeadlineCountdown deadline={task.deadline} />}
-                          </div>
-                          <p className="text-xs font-medium" style={{ color: 'var(--djmp-text-muted)' }}>
-                            <span style={{ color: 'var(--djmp-text)' }}>{task.resident}</span> • Unit {task.unit}
-                          </p>
-                          <p className="text-sm line-clamp-1" style={{ color: 'var(--djmp-text)' }}>
-                            <span className="font-bold" style={{ color: 'var(--accent-500)' }}>{task.category}</span>: {task.description}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center justify-between md:flex-col md:items-end gap-3">
-                          <div className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--djmp-text-muted)' }}>
-                            <MapPin className="w-3.5 h-3.5" />
-                            {task.location}
-                          </div>
-                          {task.status === 'assigned' && (
-                            <button
-                              className="px-4 py-2 rounded-lg text-white text-xs font-bold uppercase tracking-wider shadow-lg transition-transform active:scale-95"
-                              style={{ background: 'var(--accent-gradient)' }}
-                            >
-                              Start Task
-                            </button>
-                          )}
-                        </div>
+                    <div style={{ width: 56, flexShrink: 0 }}>
+                      <div className="numerals" style={{ fontSize: 18, lineHeight: 1, fontWeight: 600, color: 'var(--ink-2)' }}>{t}</div>
+                      <div className="tiny" style={{ color: 'var(--ink-4)', marginTop: 2 }}>
+                        {task.priority === 'high' ? '2h' : '1h'}
                       </div>
                     </div>
-                  ))}
-                  <button 
-                    onClick={() => navigate('/technician/tasks')}
-                    className="py-3 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 opacity-60 hover:opacity-100 transition-opacity"
-                    style={{ color: 'var(--djmp-text)' }}
-                  >
-                    View All Tasks <ChevronRight className="w-4 h-4" />
+                    <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--rule)' }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span className="numerals tiny" style={{ color: 'var(--ink-3)' }}>{task.request_code}</span>
+                        <span className="tiny" style={{ color: 'var(--ink-3)' }}>· Unit {task.unit}</span>
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {task.category}: {task.description}
+                      </div>
+                      {task.location && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3 }}>
+                          <MapPin size={10} style={{ color: 'var(--ink-4)' }} />
+                          <span className="tiny" style={{ color: 'var(--ink-4)' }}>{task.location}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                      <PriorityPill p={task.priority} />
+                      <StatusPill status={task.status} />
+                    </div>
+                    <ChevronRight size={14} style={{ color: 'var(--ink-4)', flexShrink: 0 }} />
                   </button>
-                </div>
-              )}
+                );
+              })}
             </div>
-          </div>
-        </div>
+          </section>
 
-        {/* Sidebar Cards */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Performance Card */}
-          <div className="glass-card overflow-hidden border-none shadow-2xl" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-             <div className="p-6 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-xl" style={{ background: 'var(--accent-gradient)', color: 'white' }}>
-                    <TrendingUp className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold" style={{ color: 'var(--djmp-text)' }}>Summary</h3>
-                    <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>Your Performance</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end">
-                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--djmp-text-muted)' }}>Total Tasks</span>
-                    <span className="text-2xl font-black" style={{ color: 'var(--djmp-text)' }}>{tasks.length}</span>
-                  </div>
-                  <div className="flex justify-between items-end">
-                    <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--djmp-text-muted)' }}>Completed</span>
-                    <span className="text-2xl font-black" style={{ color: 'var(--djmp-text)' }}>{tasks.filter(t => t.status === 'completed').length}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-end">
-                      <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--djmp-text-muted)' }}>Completion Rate</span>
-                      <span className="text-2xl font-black" style={{ color: 'var(--accent-500)' }}>
-                        {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%
+          {/* RIGHT — aside */}
+          <aside style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            {/* Performance summary */}
+            <section>
+              <SectionHead eyebrow="PERFORMANCE" title="Your" italic="summary" />
+              <div className="card" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { label: 'Total tasks', value: tasks.length },
+                    { label: 'Completed', value: completed },
+                  ].map(row => (
+                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>{row.label}</span>
+                      <span className="numerals" style={{ fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>
+                        {loading ? '—' : row.value}
                       </span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--djmp-surface-2)' }}>
-                      <div 
-                        className="h-full transition-all duration-1000" 
-                        style={{ 
-                          width: `${tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length) * 100 : 0}%`,
-                          background: 'var(--accent-gradient)'
-                        }}
-                      ></div>
+                  ))}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>Completion rate</span>
+                      <span className="numerals" style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)' }}>
+                        {loading ? '—' : rate + '%'}
+                      </span>
+                    </div>
+                    <div style={{ height: 4, background: 'var(--paper-2)', borderRadius: 2, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${rate}%`, background: 'var(--accent)', transition: 'width 0.4s ease' }} />
                     </div>
                   </div>
                 </div>
-             </div>
-          </div>
+              </div>
+            </section>
 
-          {/* Quick Reminders */}
-          <div className="glass-card overflow-hidden border-none" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-             <div className="p-6 space-y-4">
-                <h3 className="font-bold flex items-center gap-2" style={{ color: 'var(--djmp-text)' }}>
-                  <Bell className="w-4 h-4" style={{ color: 'var(--accent-500)' }} />
-                  Quick Reminders
-                </h3>
-                <ul className="space-y-3">
-                  {[
-                    'Upload before/after photos for all completed tasks',
-                    'Log materials used in your job report',
-                    'Request deadline extensions early if needed'
-                  ].map((tip, i) => (
-                    <li key={i} className="flex gap-3 text-xs leading-relaxed" style={{ color: 'var(--djmp-text)' }}>
-                      <div className="mt-1 w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center border" style={{ borderColor: 'var(--djmp-border)', color: 'var(--accent-500)' }}>
-                        <CheckCircle2 className="w-2.5 h-2.5" />
-                      </div>
-                      {tip}
-                    </li>
-                  ))}
-                </ul>
-                <button 
-                  className="w-full py-3 mt-4 text-[10px] font-black uppercase tracking-[0.2em] border-t flex items-center justify-center gap-2 opacity-60 hover:opacity-100 transition-opacity"
-                  style={{ borderColor: 'var(--djmp-border)', color: 'var(--djmp-text)' }}
-                >
-                  View All Reminders <ChevronRight className="w-3 h-3" />
-                </button>
-             </div>
-          </div>
+            {/* Reminders */}
+            <section>
+              <SectionHead eyebrow="REMINDERS" title="Before you" italic="clock off" />
+              <div className="card" style={{ padding: '4px 0' }}>
+                {[
+                  'Upload before/after photos for each completed job',
+                  'Log all materials used in the work report',
+                  'Request deadline extensions early if needed',
+                ].map((tip, i, arr) => (
+                  <div key={i} style={{ display: 'flex', gap: 10, padding: '10px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--rule-soft)' : 'none' }}>
+                    <span style={{ width: 6, height: 6, marginTop: 7, flexShrink: 0, borderRadius: 999, background: 'var(--accent)' }} />
+                    <span style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.45 }}>{tip}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Navigation shortcut */}
+            <button
+              onClick={() => navigate('/technician/tasks')}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: 'var(--ink)', border: 'none', borderRadius: 10, cursor: 'pointer', width: '100%' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--ink-2)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--ink)')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <ClipboardList size={16} style={{ color: 'var(--paper)' }} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--paper)' }}>View all my tasks</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>Manage your full assignment list</div>
+                </div>
+              </div>
+              <ChevronRight size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
+            </button>
+          </aside>
         </div>
       </div>
     </div>
