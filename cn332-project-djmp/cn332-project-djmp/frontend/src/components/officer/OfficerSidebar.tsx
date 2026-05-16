@@ -32,7 +32,6 @@ export default function OfficerSidebar() {
       style={{
         borderRight: '1px solid var(--djmp-border)',
         background: 'var(--djmp-surface-2)',
-        height: 'calc(100vh - 64px)' // Assuming TopNavigation is ~64px
       }}
     >
       <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 custom-scrollbar">

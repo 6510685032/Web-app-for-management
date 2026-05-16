@@ -34,7 +34,6 @@ export default function TechnicianSidebar() {
         borderRight: '1px solid var(--djmp-border)',
         background: 'var(--djmp-nav-bg)',
         backdropFilter: 'blur(20px)',
-        height: 'calc(100vh - 64px)',
         position: 'sticky',
         top: '64px'
       }}
