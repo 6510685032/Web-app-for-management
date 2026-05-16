@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, GripVertical } from 'lucide-react';
-import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
 
 interface RequestItem {
@@ -19,11 +18,43 @@ interface RequestItem {
   deadline?: string | null;
 }
 
-const COLUMNS = [
-  { key: 'pending', label: 'Pending', color: 'border-yellow-400 bg-yellow-50' },
-  { key: 'assigned', label: 'Assigned', color: 'border-purple-400 bg-purple-50' },
-  { key: 'in-progress', label: 'In Progress', color: 'border-blue-400 bg-blue-50' },
-  { key: 'completed', label: 'Completed', color: 'border-green-400 bg-green-50' },
+interface ColumnDef {
+  key: string;
+  label: string;
+  headerBorder: string;
+  headerBg: string;
+  headerColor: string;
+}
+
+const COLUMNS: ColumnDef[] = [
+  {
+    key: 'pending',
+    label: 'Pending',
+    headerBorder: 'var(--st-pending)',
+    headerBg: 'var(--st-pending-bg)',
+    headerColor: 'var(--st-pending)',
+  },
+  {
+    key: 'assigned',
+    label: 'Assigned',
+    headerBorder: 'var(--st-progress)',
+    headerBg: 'var(--st-progress-bg)',
+    headerColor: 'var(--st-progress)',
+  },
+  {
+    key: 'in-progress',
+    label: 'In Progress',
+    headerBorder: 'var(--st-progress)',
+    headerBg: 'var(--st-progress-bg)',
+    headerColor: 'var(--st-progress)',
+  },
+  {
+    key: 'completed',
+    label: 'Completed',
+    headerBorder: 'var(--st-done)',
+    headerBg: 'var(--st-done-bg)',
+    headerColor: 'var(--st-done)',
+  },
 ];
 
 const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -39,11 +70,34 @@ function sortByPriority(items: RequestItem[]) {
   });
 }
 
+function getPriorityBorderColor(priority: string): string {
+  switch (priority) {
+    case 'high':   return 'var(--st-overdue)';
+    case 'medium': return 'var(--st-pending)';
+    case 'low':    return 'var(--st-progress)';
+    default:       return 'var(--rule)';
+  }
+}
+
+function getPriorityChipStyle(priority: string): React.CSSProperties {
+  switch (priority) {
+    case 'high':
+      return { background: 'var(--st-overdue-bg)', color: 'var(--st-overdue)' };
+    case 'medium':
+      return { background: 'var(--st-pending-bg)', color: 'var(--st-pending)' };
+    case 'low':
+      return { background: 'var(--st-done-bg)', color: 'var(--st-done)' };
+    default:
+      return { background: 'var(--paper-2)', color: 'var(--ink-3)' };
+  }
+}
+
 export default function KanbanBoard() {
   const navigate = useNavigate();
   const [requests, setRequests] = useState<RequestItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggedItem, setDraggedItem] = useState<RequestItem | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -68,13 +122,15 @@ export default function KanbanBoard() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, colKey: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDragOverCol(colKey);
   };
 
   const handleDrop = async (e: React.DragEvent, targetStatus: string) => {
     e.preventDefault();
+    setDragOverCol(null);
     if (!draggedItem || draggedItem.status === targetStatus) {
       setDraggedItem(null);
       return;
@@ -93,103 +149,358 @@ export default function KanbanBoard() {
     setDraggedItem(null);
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'border-l-red-500 bg-red-50';
-      case 'medium': return 'border-l-yellow-500 bg-yellow-50';
-      case 'low': return 'border-l-blue-500 bg-blue-50';
-      default: return 'border-l-gray-500 bg-gray-50';
-    }
-  };
-
   const isEmergency = (item: RequestItem) =>
     item.priority === 'high' && EMERGENCY_CATEGORIES.includes(item.category);
 
   return (
-    <div className="max-w-full mx-auto p-6">
+    <div
+      className="kanban-page"
+      style={{
+        background: 'var(--paper)',
+        minHeight: '100vh',
+        padding: '32px 40px',
+      }}
+    >
+      {/* Back button */}
       <button
         onClick={() => navigate('/officer')}
-        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 font-medium"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          fontSize: '12px',
+          color: 'var(--ink-3)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          marginBottom: '24px',
+        }}
+        onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
+        onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft style={{ width: '16px', height: '16px' }} />
         Back to Dashboard
       </button>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-blue-900 mb-2">Repair Queue Board</h1>
-        <p className="text-blue-600">Drag and drop cards to change status. Emergency items are auto-bumped to top.</p>
+      {/* Page header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1
+          style={{
+            fontSize: '22px',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: 'var(--ink)',
+            marginBottom: '4px',
+            margin: '0 0 4px 0',
+          }}
+        >
+          Repair Queue Board
+        </h1>
+        <p style={{ fontSize: '13px', color: 'var(--ink-3)', margin: 0 }}>
+          Drag and drop cards to change status. Emergency items are auto-bumped to top.
+        </p>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-blue-600 font-medium">Loading board...</div>
+        <div
+          style={{
+            padding: '40px',
+            textAlign: 'center',
+            color: 'var(--ink-3)',
+          }}
+        >
+          Loading board...
+        </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-h-[70vh]">
+        <div
+          className="kanban-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px',
+            minHeight: 'calc(100vh - 200px)',
+          }}
+        >
           {COLUMNS.map(col => {
             const items = getColumnItems(col.key);
+            const isOver = dragOverCol === col.key;
+
             return (
               <div
                 key={col.key}
-                className={`rounded-xl border-t-4 ${col.color} shadow-lg overflow-hidden flex flex-col`}
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, col.key)}
+                style={{
+                  background: isOver ? 'var(--accent-soft)' : 'var(--paper-2)',
+                  borderRadius: '10px',
+                  border: '1px solid var(--rule)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'background 0.15s',
+                }}
+                onDragOver={e => handleDragOver(e, col.key)}
+                onDragLeave={() => setDragOverCol(null)}
+                onDrop={e => handleDrop(e, col.key)}
               >
-                <div className="p-4 border-b border-blue-100">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-semibold text-blue-900">{col.label}</h2>
-                    <span className="px-2 py-0.5 bg-white text-blue-700 rounded-full text-xs font-medium shadow-sm">
-                      {items.length}
-                    </span>
-                  </div>
+                {/* Top accent strip */}
+                <div
+                  style={{
+                    height: '3px',
+                    background: col.headerBorder,
+                    flexShrink: 0,
+                  }}
+                />
+
+                {/* Column header */}
+                <div
+                  style={{
+                    padding: '12px 14px',
+                    background: col.headerBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderBottom: '1px solid var(--rule-soft)',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: col.headerColor,
+                    }}
+                  >
+                    {col.label}
+                  </span>
+                  <span
+                    style={{
+                      padding: '2px 7px',
+                      borderRadius: '999px',
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      background: 'var(--paper-card)',
+                      color: col.headerColor,
+                      border: `1px solid ${col.headerBorder}`,
+                    }}
+                  >
+                    {items.length}
+                  </span>
                 </div>
 
-                <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[65vh]">
-                  {items.map(item => (
+                {/* Card scroll area */}
+                <div
+                  style={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    padding: '10px',
+                    gap: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                  }}
+                >
+                  {items.length === 0 ? (
                     <div
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item)}
-                      className={`bg-white border-l-4 ${getPriorityColor(item.priority)} rounded-lg p-3 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all ${
-                        isEmergency(item) ? 'ring-2 ring-red-400 ring-offset-1' : ''
-                      }`}
+                      style={{
+                        textAlign: 'center',
+                        fontSize: '12px',
+                        color: 'var(--ink-4)',
+                        padding: '32px 0',
+                      }}
                     >
-                      <div className="flex items-start justify-between mb-2 gap-2">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="font-medium text-blue-900 text-sm truncate">{item.request_code}</span>
-                        </div>
-                        {isEmergency(item) && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold animate-pulse flex-shrink-0">
-                            <AlertCircle className="w-3 h-3" />
-                            URGENT
-                          </span>
-                        )}
-                      </div>
-
-                      <p className="text-xs text-blue-700 mb-1">{item.resident} • Unit {item.unit}</p>
-                      <div className="bg-blue-50 p-2 rounded mb-2">
-                        <p className="text-xs font-medium text-blue-900">{item.category}</p>
-                        <p className="text-xs text-blue-600 line-clamp-2">{item.description}</p>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 mt-2">
-                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium capitalize flex-shrink-0 ${
-                          item.priority === 'high' ? 'bg-red-100 text-red-700' :
-                          item.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-blue-100 text-blue-700'
-                        }`}>
-                          {item.priority}
-                        </span>
-                        <span className="text-xs text-blue-500 truncate" title={item.technician !== '-' ? item.technician : 'Unassigned'}>
-                          {item.technician !== '-' ? item.technician : 'Unassigned'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {items.length === 0 && (
-                    <div className="text-center py-8 text-blue-400 text-sm">
                       No items
                     </div>
+                  ) : (
+                    items.map(item => {
+                      const emergency = isEmergency(item);
+                      const isDragging = draggedItem?.id === item.id;
+
+                      return (
+                        <div
+                          key={item.id}
+                          draggable
+                          onDragStart={e => handleDragStart(e, item)}
+                          style={{
+                            background: 'var(--paper-card)',
+                            border: '1px solid var(--rule)',
+                            borderLeft: `3px solid ${getPriorityBorderColor(item.priority)}`,
+                            borderRadius: '6px',
+                            padding: '10px 12px',
+                            cursor: 'grab',
+                            opacity: isDragging ? 0.5 : 1,
+                            boxShadow: emergency
+                              ? `0 0 0 2px var(--st-overdue)`
+                              : undefined,
+                            transition: 'box-shadow 0.15s',
+                          }}
+                          onMouseEnter={e => {
+                            if (!emergency) {
+                              (e.currentTarget as HTMLDivElement).style.boxShadow =
+                                'var(--shadow-lift)';
+                            }
+                          }}
+                          onMouseLeave={e => {
+                            if (!emergency) {
+                              (e.currentTarget as HTMLDivElement).style.boxShadow = '';
+                            }
+                          }}
+                          onMouseDown={e => {
+                            (e.currentTarget as HTMLDivElement).style.cursor = 'grabbing';
+                          }}
+                          onMouseUp={e => {
+                            (e.currentTarget as HTMLDivElement).style.cursor = 'grab';
+                          }}
+                        >
+                          {/* Top row: code + urgent badge */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'flex-start',
+                              gap: '8px',
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                minWidth: 0,
+                              }}
+                            >
+                              <GripVertical
+                                style={{
+                                  width: '12px',
+                                  height: '12px',
+                                  color: 'var(--ink-4)',
+                                  flexShrink: 0,
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: '12px',
+                                  fontWeight: 600,
+                                  color: 'var(--ink)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {item.request_code}
+                              </span>
+                            </div>
+
+                            {emergency && (
+                              <span
+                                style={{
+                                  background: 'var(--st-overdue-bg)',
+                                  color: 'var(--st-overdue)',
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  fontSize: '10px',
+                                  fontWeight: 600,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <AlertCircle style={{ width: '10px', height: '10px' }} />
+                                URGENT
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Resident line */}
+                          <p
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--ink-3)',
+                              marginTop: '4px',
+                              marginBottom: 0,
+                            }}
+                          >
+                            {item.resident} &bull; Unit {item.unit}
+                          </p>
+
+                          {/* Category / description box */}
+                          <div
+                            style={{
+                              marginTop: '8px',
+                              background: 'var(--paper-2)',
+                              borderRadius: '4px',
+                              padding: '6px 8px',
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                color: 'var(--ink-2)',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.06em',
+                                margin: '0 0 2px 0',
+                              }}
+                            >
+                              {item.category}
+                            </p>
+                            <p
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--ink-3)',
+                                margin: 0,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              {item.description}
+                            </p>
+                          </div>
+
+                          {/* Bottom row: priority chip + technician */}
+                          <div
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              marginTop: '8px',
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                padding: '2px 7px',
+                                borderRadius: '999px',
+                                fontSize: '10px',
+                                fontWeight: 500,
+                                textTransform: 'capitalize',
+                                flexShrink: 0,
+                                ...getPriorityChipStyle(item.priority),
+                              }}
+                            >
+                              {item.priority}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '11px',
+                                color: 'var(--ink-4)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '60%',
+                                textAlign: 'right',
+                              }}
+                              title={item.technician !== '-' ? item.technician : 'Unassigned'}
+                            >
+                              {item.technician !== '-' ? item.technician : 'Unassigned'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
@@ -197,6 +508,18 @@ export default function KanbanBoard() {
           })}
         </div>
       )}
+
+      {/* Responsive override via a style tag */}
+      <style>{`
+        @media (max-width: 768px) {
+          .kanban-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .kanban-page {
+            padding: 16px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

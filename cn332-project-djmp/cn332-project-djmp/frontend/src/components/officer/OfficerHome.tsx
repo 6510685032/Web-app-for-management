@@ -4,11 +4,8 @@ import { useUser } from '../../context/UserContext';
 import {
   ClipboardList,
   UserCheck,
-  BarChart3,
   Clock,
   AlertTriangle,
-  Columns,
-  CalendarDays,
   ChevronRight,
   Headset
 } from 'lucide-react';
@@ -33,6 +30,22 @@ interface RequestItem {
   priority: string;
   status: string;
   created_at: string;
+}
+
+function getTimeOfDay(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+function getPriorityPillClass(priority: string): string {
+  switch (priority) {
+    case 'high': return 'pill overdue';
+    case 'medium': return 'pill pending';
+    case 'low': return 'pill done';
+    default: return 'pill';
+  }
 }
 
 export default function OfficerHome() {
@@ -66,170 +79,349 @@ export default function OfficerHome() {
   }, []);
 
   const statCards = [
-    { label: 'Total Requests', value: stats.total, icon: ClipboardList, color: 'bg-blue-500' },
-    { label: 'Pending', value: stats.pending, icon: Clock, color: 'bg-yellow-500' },
-    { label: 'In Progress', value: stats.in_progress, icon: UserCheck, color: 'bg-blue-600' },
-    { label: 'Overdue', value: stats.overdue, icon: AlertTriangle, color: 'bg-red-500' },
+    {
+      label: 'Total Requests',
+      value: stats.total,
+      icon: ClipboardList,
+      iconBg: 'var(--forest-soft)',
+      iconColor: 'var(--forest)',
+    },
+    {
+      label: 'Pending',
+      value: stats.pending,
+      icon: Clock,
+      iconBg: 'var(--ochre-soft)',
+      iconColor: 'var(--ochre)',
+    },
+    {
+      label: 'In Progress',
+      value: stats.in_progress,
+      icon: UserCheck,
+      iconBg: 'var(--slate-soft)',
+      iconColor: 'var(--slate)',
+    },
+    {
+      label: 'Overdue',
+      value: stats.overdue,
+      icon: AlertTriangle,
+      iconBg: 'var(--terracotta-soft)',
+      iconColor: 'var(--terracotta)',
+    },
   ];
 
+  const firstName = user?.name?.split(' ')[0] ?? 'there';
+  const timeOfDay = getTimeOfDay();
+
   return (
-    <div className="pb-12">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="mb-8 fade-in-up">
-          <h1 className="text-3xl font-bold mb-2 tracking-wide" style={{ color: 'var(--djmp-text)' }}>Juristic Officer Dashboard</h1>
-          <p style={{ color: 'var(--djmp-text-muted)' }}>Welcome back, {user?.name}! Here's your management overview</p>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
+      <div style={{ padding: '32px 40px' }} className="officer-home-content">
+        <style>{`
+          @media (max-width: 640px) {
+            .officer-home-content { padding: 16px 20px !important; }
+            .officer-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .officer-main-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+
+        {/* Page Header */}
+        <div style={{ marginBottom: 32 }}>
+          <p className="eyebrow">Officer Dashboard</p>
+          <h1 style={{
+            fontSize: 28,
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: 'var(--ink)',
+            margin: '4px 0 6px',
+          }}>
+            Good {timeOfDay}, {firstName}!
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
+            Here's your management overview
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-
-          {/* Main Left Column (wider) */}
-          <div className="lg:col-span-8 flex flex-col gap-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
-
-            {/* Quick Actions (Wide Banners) */}
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => navigate('/officer/requests')} 
-                className="w-full text-white p-5 rounded-xl hover:shadow-lg transition-all group flex items-center justify-between"
-                style={{ background: 'var(--accent-gradient)' }}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-white/20 backdrop-blur-sm">
-                    <ClipboardList className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-left min-w-0">
-                    <h3 className="text-base font-bold tracking-wide">Manage Requests</h3>
-                    <p className="text-white/80 text-xs mt-0.5">Review & approve requests</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 opacity-70 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-              </button>
-            </div>
-
-            {/* Dashboard 4 Boxes */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-2">
-              {statCards.map((stat, i) => {
-                const Icon = stat.icon;
-                const glows = ['stat-glow-blue', 'stat-glow-yellow', 'stat-glow-blue', 'stat-glow-red'];
-                return (
-                  <div key={stat.label} className={`glass-card p-5 ${glows[i]}`}>
-                    {loading ? (
-                      <><div className="shimmer-skeleton w-10 h-10 rounded-lg mb-3" /><div className="shimmer-skeleton h-6 w-12 mb-1" /><div className="shimmer-skeleton h-3 w-20" /></>
-                    ) : (
-                      <><div className={`w-10 h-10 ${stat.color} rounded-lg flex items-center justify-center mb-3`}><Icon className="w-5 h-5 text-white" /></div>
-                        <p className="text-2xl font-bold mb-0.5" style={{ color: 'var(--djmp-text)' }}>{stat.value}</p>
-                        <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>{stat.label}</p></>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pending Requests */}
-            <div className="glass-card overflow-hidden mt-2">
-              <div className="p-6 flex justify-between items-center" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
-                <div>
-                  <h2 className="text-xl font-bold" style={{ color: 'var(--djmp-text)' }}>Pending Review</h2>
-                  <p className="text-xs mt-1" style={{ color: 'var(--djmp-text-muted)' }}>Requests awaiting your approval</p>
-                </div>
-                <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ background: 'rgba(245,158,11,0.15)', color: '#b45309' }}>
-                  {pendingRequests.length} Pending
-                </span>
+        {/* Stats Grid */}
+        <div
+          className="officer-stats-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 16,
+            marginBottom: 32,
+          }}
+        >
+          {statCards.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="card lifted" style={{ padding: 20 }}>
+                {loading ? (
+                  <>
+                    <div className="shimmer-skeleton" style={{ width: 32, height: 32, borderRadius: 6, marginBottom: 12 }} />
+                    <div className="shimmer-skeleton" style={{ height: 28, width: 48, marginBottom: 4 }} />
+                    <div className="shimmer-skeleton" style={{ height: 12, width: 80 }} />
+                  </>
+                ) : (
+                  <>
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 6,
+                      background: stat.iconBg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 12,
+                    }}>
+                      <Icon size={16} style={{ color: stat.iconColor }} />
+                    </div>
+                    <p className="numerals" style={{
+                      fontSize: 28,
+                      fontWeight: 700,
+                      color: 'var(--ink)',
+                      margin: '0 0 2px',
+                    }}>
+                      {stat.value}
+                    </p>
+                    <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>{stat.label}</p>
+                  </>
+                )}
               </div>
+            );
+          })}
+        </div>
+
+        {/* Two-column layout */}
+        <div
+          className="officer-main-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.6fr 1fr',
+            gap: 32,
+            alignItems: 'start',
+          }}
+        >
+          {/* LEFT column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Quick action banner */}
+            <button
+              onClick={() => navigate('/officer/requests')}
+              style={{
+                background: 'var(--accent)',
+                padding: '14px 18px',
+                borderRadius: 'var(--radius-lg)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100%',
+                textAlign: 'left',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.opacity = '0.92')}
+              onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <ClipboardList size={16} style={{ color: 'white' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'white', margin: '0 0 2px' }}>
+                    Manage Requests
+                  </p>
+                  <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', margin: 0 }}>
+                    Review &amp; approve
+                  </p>
+                </div>
+              </div>
+              <ChevronRight size={16} style={{ color: 'white', opacity: 0.6 }} />
+            </button>
+
+            {/* Pending Requests card */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div style={{
+                padding: '16px 18px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid var(--rule-soft)',
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>
+                  Pending Review
+                </span>
+                <span className="pill pending">{pendingRequests.length}</span>
+              </div>
+
               <div>
                 {loading ? (
-                  <div className="p-6 space-y-3">{[1, 2, 3].map(i => <div key={i} className="shimmer-skeleton h-12" />)}</div>
+                  <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="shimmer-skeleton" style={{ height: 48, borderRadius: 6 }} />
+                    ))}
+                  </div>
                 ) : pendingRequests.length === 0 ? (
-                  <div className="p-6 text-center text-sm" style={{ color: 'var(--djmp-text-muted)' }}>No pending requests</div>
+                  <div style={{
+                    padding: 24,
+                    textAlign: 'center',
+                    fontSize: 12,
+                    color: 'var(--ink-4)',
+                  }}>
+                    No pending requests
+                  </div>
                 ) : (
                   pendingRequests.map((request, idx) => (
-                    <div key={request.id} className="p-4 cursor-pointer transition-colors"
-                      style={{ borderTop: idx > 0 ? '1px solid var(--djmp-border)' : 'none' }}
+                    <div
+                      key={request.id}
                       onClick={() => navigate('/officer/requests')}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--accent-shimmer)')}
+                      style={{
+                        padding: '12px 18px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        cursor: 'pointer',
+                        borderTop: idx > 0 ? '1px solid var(--rule-soft)' : 'none',
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper-2)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-semibold text-sm" style={{ color: 'var(--djmp-text)' }}>{request.request_code}</span>
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-700)' }}>{request.priority}</span>
-                          </div>
-                          <p className="text-xs mb-1 truncate" style={{ color: 'var(--djmp-text-muted)' }}>{request.resident} • Unit {request.unit}</p>
-                          <p className="text-xs truncate" style={{ color: 'var(--djmp-text-muted)' }}>{request.category}: {request.description}</p>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink)' }}>
+                            {request.request_code}
+                          </span>
+                          <span className={getPriorityPillClass(request.priority)}>
+                            {request.priority}
+                          </span>
                         </div>
-                        <div className="text-right text-[11px] whitespace-nowrap pl-4" style={{ color: 'var(--djmp-text-muted)' }}>{request.created_at}</div>
+                        <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {request.resident} &bull; Unit {request.unit}
+                        </p>
+                        <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {request.category}: {request.description}
+                        </p>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-4)', whiteSpace: 'nowrap', paddingLeft: 12 }}>
+                        {request.created_at}
                       </div>
                     </div>
                   ))
                 )}
               </div>
             </div>
-
           </div>
 
-          {/* Right Sidebar - Technicians */}
-          <div className="lg:col-span-4 fade-in-up flex flex-col gap-6" style={{ animationDelay: '0.2s' }}>
-
-            <div className="glass-card flex flex-col h-[550px]">
-              <div className="p-5 flex-shrink-0 flex items-center justify-between" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--djmp-text)' }}>Technicians</h2>
+          {/* RIGHT column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Technicians card */}
+            <div className="card" style={{ height: 460, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{
+                padding: '14px 16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: '1px solid var(--rule-soft)',
+                flexShrink: 0,
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Team</span>
                 <button
                   onClick={() => navigate('/officer/schedule')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                  style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-500)' }}
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--accent)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
                 >
                   View All
                 </button>
               </div>
 
-              {/* Scrollable list area */}
-              <div className="p-4 space-y-2 overflow-y-auto custom-scrollbar flex-1">
+              <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
                 {loading ? (
-                  <div className="space-y-3">{[1, 2, 3, 4, 5].map(i => <div key={i} className="shimmer-skeleton h-16 rounded-xl" />)}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <div key={i} className="shimmer-skeleton" style={{ height: 44, borderRadius: 6 }} />
+                    ))}
+                  </div>
                 ) : technicians.length === 0 ? (
-                  <div className="text-center py-8 text-sm" style={{ color: 'var(--djmp-text-muted)' }}>No technicians found</div>
+                  <div style={{ textAlign: 'center', padding: '32px 0', fontSize: 12, color: 'var(--ink-4)' }}>
+                    No technicians found
+                  </div>
                 ) : (
                   technicians.map((tech) => {
-                    // Status logic matching mockup (Online, In Progress, On Site, Offline)
-                    let statusLabel = 'Offline';
-                    let statusColor = 'gray'; // bg-gray-500
-                    if (tech.active_tasks > 0 && tech.active_tasks < 3) {
-                      statusLabel = 'In Progress';
-                      statusColor = 'blue'; // bg-blue-500
-                    } else if (tech.active_tasks >= 3) {
-                      statusLabel = 'On Site';
-                      statusColor = 'purple'; // bg-purple-500
+                    let statusLabel: string;
+                    let dotColor: string;
+                    let labelColor: string;
+                    if (tech.active_tasks === 0) {
+                      statusLabel = 'Available';
+                      dotColor = 'var(--st-done)';
+                      labelColor = 'var(--st-done)';
+                    } else if (tech.active_tasks <= 2) {
+                      statusLabel = 'Busy';
+                      dotColor = 'var(--st-progress)';
+                      labelColor = 'var(--st-progress)';
                     } else {
-                      statusLabel = 'Online';
-                      statusColor = 'green'; // bg-green-500
+                      statusLabel = 'On Site';
+                      dotColor = 'var(--st-overdue)';
+                      labelColor = 'var(--st-overdue)';
                     }
 
+                    const initials = tech.name
+                      .split(' ')
+                      .map((n: string) => n[0])
+                      .join('')
+                      .substring(0, 2)
+                      .toUpperCase();
+
                     return (
-                      <div key={tech.id} className="p-3 rounded-xl transition-colors flex items-center justify-between cursor-pointer group"
-                        style={{ border: '1px solid transparent' }}
+                      <div
+                        key={tech.id}
                         onClick={() => navigate('/officer/schedule')}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.background = 'var(--djmp-surface-2)';
-                          e.currentTarget.style.borderColor = 'var(--djmp-border)';
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: 8,
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          transition: 'background 0.15s',
                         }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.background = 'transparent';
-                          e.currentTarget.style.borderColor = 'transparent';
-                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--paper-2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm flex-shrink-0" style={{ background: 'var(--accent-gradient)' }}>
-                            {tech.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate" style={{ color: 'var(--djmp-text)' }}>{tech.name}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`w-2 h-2 rounded-full bg-${statusColor}-500 shadow-[0_0_6px_rgba(0,0,0,0.2)]`} />
-                              <p className="text-[11px] font-medium" style={{ color: 'var(--djmp-text-muted)' }}>{statusLabel}</p>
-                            </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span className="avatar" style={{ flexShrink: 0 }}>{initials}</span>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', margin: 0 }}>{tech.name}</p>
+                            <p style={{ fontSize: 11, color: 'var(--ink-3)', margin: 0 }}>{tech.specialty}</p>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" style={{ color: 'var(--djmp-text-muted)' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            background: dotColor,
+                            display: 'inline-block',
+                            flexShrink: 0,
+                          }} />
+                          <span style={{ fontSize: 11, fontWeight: 500, color: labelColor }}>
+                            {statusLabel}
+                          </span>
+                        </div>
                       </div>
                     );
                   })
@@ -237,29 +429,41 @@ export default function OfficerHome() {
               </div>
             </div>
 
-            {/* Need Help Card */}
-            <div className="rounded-2xl p-6 relative overflow-hidden shadow-lg" style={{ background: 'var(--accent-gradient)' }}>
-              {/* Decorative background circle */}
-              <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-white/10 blur-xl"></div>
-              <div className="absolute right-4 bottom-4 opacity-20 transform -rotate-12">
-                <Headset className="w-20 h-20 text-white" />
-              </div>
-
-              <div className="relative z-10">
-                <h3 className="text-white font-bold text-lg mb-1">Need Help?</h3>
-                <p className="text-white/90 text-xs mb-5">Contact support team</p>
-                <button
-                  onClick={() => navigate('/support')}
-                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 backdrop-blur-md transition-colors text-white text-sm font-semibold py-2.5 px-5 rounded-xl border border-white/20 cursor-pointer"
-                >
-                  <Headset className="w-4 h-4" />
-                  Contact Support
-                </button>
-              </div>
+            {/* Need Help banner */}
+            <div style={{
+              background: 'var(--accent)',
+              borderRadius: 'var(--radius-lg)',
+              padding: 20,
+            }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'white', margin: '0 0 4px' }}>
+                Need Help?
+              </p>
+              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: '0 0 14px' }}>
+                Contact our support team for assistance
+              </p>
+              <button
+                onClick={() => navigate('/support')}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  padding: '8px 14px',
+                  borderRadius: 6,
+                  color: 'white',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+              >
+                <Headset size={14} />
+                Contact Support
+              </button>
             </div>
-
           </div>
-
         </div>
       </div>
     </div>

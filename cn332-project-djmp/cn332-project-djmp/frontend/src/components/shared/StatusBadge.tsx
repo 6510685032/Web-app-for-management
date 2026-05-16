@@ -1,7 +1,17 @@
 import React from 'react';
-import { Clock, CheckCircle, AlertCircle, XCircle, PlayCircle, FileText, ShieldCheck, ShieldX } from 'lucide-react';
 
-export type Status = 'pending' | 'in-progress' | 'completed' | 'overdue' | 'cancelled' | 'submitted' | 'reviewed' | 'assigned' | 'pending_approval' | 'approved' | 'rejected';
+export type Status =
+  | 'pending'
+  | 'in-progress'
+  | 'completed'
+  | 'overdue'
+  | 'cancelled'
+  | 'submitted'
+  | 'reviewed'
+  | 'assigned'
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected';
 
 interface StatusBadgeProps {
   status: Status;
@@ -9,105 +19,52 @@ interface StatusBadgeProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+/** Maps status values to JuristicPro design pill classes + dot color + labels */
+const statusConfig: Record<Status, { pillClass: string; dotColor: string; label: string }> = {
+  pending:         { pillClass: 'pending',   dotColor: 'var(--st-pending)',   label: 'Pending'      },
+  pending_approval:{ pillClass: 'pending',   dotColor: 'var(--st-pending)',   label: 'รออนุมัติ'    },
+  submitted:       { pillClass: 'progress',  dotColor: 'var(--st-progress)',  label: 'Submitted'    },
+  reviewed:        { pillClass: 'progress',  dotColor: 'var(--st-progress)',  label: 'Reviewed'     },
+  assigned:        { pillClass: 'progress',  dotColor: 'var(--st-progress)',  label: 'Assigned'     },
+  'in-progress':   { pillClass: 'progress',  dotColor: 'var(--st-progress)',  label: 'In Progress'  },
+  completed:       { pillClass: 'done',      dotColor: 'var(--st-done)',      label: 'Completed'    },
+  approved:        { pillClass: 'done',      dotColor: 'var(--st-done)',      label: 'อนุมัติแล้ว'  },
+  overdue:         { pillClass: 'overdue',   dotColor: 'var(--st-overdue)',   label: 'Overdue'      },
+  rejected:        { pillClass: 'overdue',   dotColor: 'var(--st-overdue)',   label: 'ไม่อนุมัติ'   },
+  cancelled:       { pillClass: 'cancelled', dotColor: 'var(--st-cancelled)', label: 'Cancelled'    },
+};
+
 export default function StatusBadge({ status, showIcon = true, size = 'md' }: StatusBadgeProps) {
-  const getStatusConfig = (status: Status) => {
-    switch (status) {
-      case 'pending':
-        return {
-          label: 'Pending',
-          color: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-          icon: Clock,
-        };
-      case 'submitted':
-        return {
-          label: 'Submitted',
-          color: 'bg-blue-100 text-blue-700 border-blue-200',
-          icon: FileText,
-        };
-      case 'reviewed':
-        return {
-          label: 'Reviewed',
-          color: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-          icon: FileText,
-        };
-      case 'assigned':
-        return {
-          label: 'Assigned',
-          color: 'bg-purple-100 text-purple-700 border-purple-200',
-          icon: FileText,
-        };
-      case 'in-progress':
-        return {
-          label: 'In Progress',
-          color: 'bg-blue-100 text-blue-700 border-blue-200',
-          icon: PlayCircle,
-        };
-      case 'completed':
-        return {
-          label: 'Completed',
-          color: 'bg-green-100 text-green-700 border-green-200',
-          icon: CheckCircle,
-        };
-      case 'overdue':
-        return {
-          label: 'Overdue',
-          color: 'bg-red-100 text-red-700 border-red-200',
-          icon: AlertCircle,
-        };
-      case 'cancelled':
-        return {
-          label: 'Cancelled',
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
-          icon: XCircle,
-        };
-      case 'pending_approval':
-        return {
-          label: 'รออนุมัติ',
-          color: 'bg-orange-100 text-orange-700 border-orange-200',
-          icon: Clock,
-        };
-      case 'approved':
-        return {
-          label: 'อนุมัติแล้ว',
-          color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-          icon: ShieldCheck,
-        };
-      case 'rejected':
-        return {
-          label: 'ไม่อนุมัติ',
-          color: 'bg-red-100 text-red-700 border-red-200',
-          icon: ShieldX,
-        };
-      default:
-        return {
-          label: status,
-          color: 'bg-gray-100 text-gray-700 border-gray-200',
-          icon: Clock,
-        };
-    }
+  const config = statusConfig[status] ?? {
+    pillClass: 'cancelled',
+    dotColor: 'var(--st-cancelled)',
+    label: status,
   };
 
-  const config = getStatusConfig(status);
-  const Icon = config.icon;
-
-  const sizeClasses = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-3 py-1 text-sm',
-    lg: 'px-4 py-1.5 text-base',
+  const styles: Record<'sm' | 'md' | 'lg', { dotSize: string; fontSize: string; padding: string }> = {
+    sm: { dotSize: '5px',  fontSize: '10px', padding: '2px 6px 2px 5px'  },
+    md: { dotSize: '6px',  fontSize: '11px', padding: '3px 8px 3px 7px'  },
+    lg: { dotSize: '8px',  fontSize: '12px', padding: '4px 10px 4px 9px' },
   };
 
-  const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5',
-  };
+  const { dotSize, fontSize, padding } = styles[size];
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium border ${config.color} ${sizeClasses[size]}`}
-    >
-      {showIcon && <Icon className={iconSizes[size]} />}
-      <span>{config.label}</span>
+    <span className={`pill ${config.pillClass}`} style={{ fontSize, padding }}>
+      {showIcon && (
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-block',
+            width: dotSize,
+            height: dotSize,
+            borderRadius: '50%',
+            background: config.dotColor,
+            flexShrink: 0,
+          }}
+        />
+      )}
+      {config.label}
     </span>
   );
 }

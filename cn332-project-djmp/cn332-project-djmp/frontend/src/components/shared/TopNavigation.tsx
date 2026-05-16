@@ -53,248 +53,428 @@ export default function TopNavigation() {
 
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || 'U';
 
-  const dropdownStyle: React.CSSProperties = {
-    background: 'var(--djmp-nav-bg)',
-    border: '1px solid var(--djmp-border)',
-    backdropFilter: 'blur(24px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-    boxShadow: '0 16px 48px rgba(0,0,0,0.18)',
+  const panelStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: 0,
+    top: '100%',
+    marginTop: '4px',
+    background: 'var(--paper-card)',
+    border: '1px solid var(--rule)',
+    borderRadius: '10px',
+    boxShadow: 'var(--shadow-lift)',
+    overflow: 'hidden',
+    zIndex: 100,
+  };
+
+  const iconBtnStyle: React.CSSProperties = {
+    width: '28px',
+    height: '28px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    color: 'var(--ink-3)',
+    transition: 'background 0.15s',
+    padding: 0,
+    flexShrink: 0,
   };
 
   return (
     <nav
-      className="glass-nav sticky top-0 z-50"
-      style={{ transition: 'background 0.3s' }}
+      style={{
+        background: 'var(--paper)',
+        borderBottom: '1px solid var(--rule-soft)',
+        height: '48px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px',
+        gap: '12px',
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      {/* Brand */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Building2
+          style={{ width: '16px', height: '16px', color: 'var(--accent)', flexShrink: 0 }}
+        />
+        <span
+          style={{
+            fontWeight: 600,
+            fontSize: '14px',
+            color: 'var(--ink)',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          JuristicPro
+        </span>
+      </div>
 
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px var(--accent-glow)' }}
-            >
-              <Building2 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold gradient-text text-lg leading-none">JuristicPro</h1>
-              <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>
-                Housing Estate Management
-              </p>
-            </div>
-          </div>
+      {/* Right actions */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          marginLeft: 'auto',
+        }}
+      >
+        {/* Theme toggle */}
+        <button
+          onClick={toggleMode}
+          style={iconBtnStyle}
+          title={theme.mode === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+        >
+          {theme.mode === 'dark'
+            ? <Sun style={{ width: '16px', height: '16px' }} />
+            : <Moon style={{ width: '16px', height: '16px' }} />
+          }
+        </button>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-2">
-
-            {/* Dark/Light toggle */}
-            <button
-              onClick={toggleMode}
-              className="p-2 rounded-lg transition-colors"
-              style={{
-                color: 'var(--djmp-text-muted)',
-                background: 'transparent',
-              }}
-              title={theme.mode === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
-            >
-              {theme.mode === 'dark'
-                ? <Sun className="w-5 h-5" />
-                : <Moon className="w-5 h-5" />
-              }
-            </button>
-
-            {/* Notifications */}
-            <div className="relative" ref={notifRef}>
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative p-2 rounded-lg transition-colors"
-                style={{ color: 'var(--djmp-text-muted)' }}
+        {/* Notifications */}
+        <div style={{ position: 'relative' }} ref={notifRef}>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            style={{ ...iconBtnStyle, position: 'relative' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+          >
+            <Bell style={{ width: '16px', height: '16px' }} />
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  right: '2px',
+                  width: '14px',
+                  height: '14px',
+                  background: 'var(--st-overdue)',
+                  color: '#fff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                }}
               >
-                <Bell className="w-6 h-6" />
-                {unreadCount > 0 && (
-                  <span
-                    className="absolute top-1 right-1 w-5 h-5 text-white text-xs rounded-full flex items-center justify-center font-medium avatar-ring"
-                    style={{ background: '#ef4444' }}
-                  >
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
 
-              {showNotifications && (
-                <div
-                  className="absolute right-0 mt-2 w-96 rounded-2xl overflow-hidden fade-in-up"
-                  style={dropdownStyle}
+          {showNotifications && (
+            <div style={{ ...panelStyle, width: '360px' }}>
+              {/* Header */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: '1px solid var(--rule-soft)',
+                }}
+              >
+                <span
+                  style={{ fontWeight: 600, fontSize: '13px', color: 'var(--ink)' }}
                 >
-                  <div
-                    className="p-4 flex justify-between items-center"
-                    style={{ borderBottom: '1px solid var(--djmp-border)' }}
+                  Notifications
+                </span>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    style={{
+                      fontSize: '11px',
+                      color: 'var(--accent)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
                   >
-                    <h3 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
-                      Notifications
-                    </h3>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-xs font-medium"
-                        style={{ color: 'var(--accent-600)' }}
-                      >
-                        Mark all as read
-                      </button>
-                    )}
-                  </div>
+                    Mark all as read
+                  </button>
+                )}
+              </div>
 
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="p-8 text-center" style={{ color: 'var(--djmp-text-muted)' }}>
-                        <Bell className="w-12 h-12 mx-auto mb-2 opacity-40" />
-                        <p>No notifications</p>
-                      </div>
-                    ) : (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className="p-4 transition-colors"
+              {/* List */}
+              <div style={{ maxHeight: '384px', overflowY: 'auto' }}>
+                {notifications.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '32px 16px',
+                      textAlign: 'center',
+                      color: 'var(--ink-4)',
+                    }}
+                  >
+                    <Bell
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        margin: '0 auto 8px',
+                        opacity: 0.3,
+                        color: 'var(--ink-4)',
+                        display: 'block',
+                      }}
+                    />
+                    <p style={{ fontSize: '12px' }}>No notifications</p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      style={{
+                        padding: '12px 16px',
+                        borderBottom: '1px solid var(--rule-soft)',
+                        background: !notif.read ? 'var(--accent-soft)' : 'transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                            <span
+                              style={{
+                                fontSize: '12px',
+                                fontWeight: 500,
+                                color: 'var(--ink)',
+                              }}
+                            >
+                              {notif.title}
+                            </span>
+                            {!notif.read && (
+                              <span
+                                style={{
+                                  width: '6px',
+                                  height: '6px',
+                                  borderRadius: '50%',
+                                  background: 'var(--accent)',
+                                  flexShrink: 0,
+                                }}
+                              />
+                            )}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: '11px',
+                              color: 'var(--ink-3)',
+                              marginBottom: '4px',
+                            }}
+                          >
+                            {notif.message}
+                          </p>
+                          <p style={{ fontSize: '10px', color: 'var(--ink-4)' }}>
+                            {formatTime(notif.timestamp)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => clearNotification(notif.id)}
                           style={{
-                            borderBottom: '1px solid var(--djmp-border)',
-                            background: !notif.read ? 'var(--accent-shimmer)' : 'transparent',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--ink-4)',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
                           }}
                         >
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium" style={{ color: 'var(--djmp-text)' }}>
-                                  {notif.title}
-                                </h4>
-                                {!notif.read && (
-                                  <span
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ background: 'var(--accent-500)' }}
-                                  />
-                                )}
-                              </div>
-                              <p className="text-sm mb-2" style={{ color: 'var(--djmp-text-muted)' }}>
-                                {notif.message}
-                              </p>
-                              <p className="text-xs" style={{ color: 'var(--djmp-text-muted)', opacity: 0.7 }}>
-                                {formatTime(notif.timestamp)}
-                              </p>
-                            </div>
-                            <button
-                              onClick={() => clearNotification(notif.id)}
-                              style={{ color: 'var(--djmp-text-muted)' }}
-                              className="p-1 hover:opacity-70 transition-opacity"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          {!notif.read && (
-                            <button
-                              onClick={() => markAsRead(notif.id)}
-                              className="text-xs font-medium mt-2"
-                              style={{ color: 'var(--accent-600)' }}
-                            >
-                              Mark as read
-                            </button>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Profile */}
-            <div className="relative" ref={profileRef}>
-              <button
-                onClick={() => setShowProfile(!showProfile)}
-                className="flex items-center gap-3 p-2 pr-3 rounded-xl transition-colors"
-                style={{ background: showProfile ? 'var(--accent-shimmer)' : 'transparent' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-white"
-                  style={{ background: 'var(--accent-gradient)' }}
-                >
-                  {userInitial}
-                </div>
-                <div className="text-left hidden md:block">
-                  <p className="text-sm font-medium" style={{ color: 'var(--djmp-text)' }}>
-                    {user?.name || 'User'}
-                  </p>
-                  <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>
-                    {getRoleLabel(user?.role || '')}
-                  </p>
-                </div>
-                <ChevronDown className="w-4 h-4" style={{ color: 'var(--djmp-text-muted)' }} />
-              </button>
-
-              {showProfile && (
-                <div
-                  className="absolute right-0 mt-2 w-72 rounded-2xl overflow-hidden fade-in-up"
-                  style={dropdownStyle}
-                >
-                  <div className="p-4" style={{ borderBottom: '1px solid var(--djmp-border)' }}>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center font-semibold text-white text-lg"
-                        style={{ background: 'var(--accent-gradient)' }}
-                      >
-                        {userInitial}
+                          <X style={{ width: '14px', height: '14px' }} />
+                        </button>
                       </div>
-                      <div>
-                        <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
-                          {user?.name || 'User'}
-                        </p>
-                        <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
-                          {user?.email || '-'}
-                        </p>
-                      </div>
+                      {!notif.read && (
+                        <button
+                          onClick={() => markAsRead(notif.id)}
+                          style={{
+                            fontSize: '11px',
+                            color: 'var(--accent)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            padding: 0,
+                            marginTop: '6px',
+                          }}
+                        >
+                          Mark as read
+                        </button>
+                      )}
                     </div>
-                    <span
-                      className="inline-block px-3 py-1 rounded-full text-xs font-medium"
-                      style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-700)' }}
-                    >
-                      {getRoleLabel(user?.role || '')}
-                    </span>
-                  </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
-                  <div className="p-2">
-                    {[
-                      { icon: <User className="w-5 h-5" />, label: 'View Profile', action: handleOpenProfile },
-                      { icon: <Settings className="w-5 h-5" />, label: 'Settings', action: handleOpenSettings },
-                    ].map((item) => (
-                      <button
-                        key={item.label}
-                        onClick={item.action}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
-                        style={{ color: 'var(--djmp-text)' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-shimmer)')}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
+        {/* Profile */}
+        <div style={{ position: 'relative' }} ref={profileRef}>
+          <button
+            onClick={() => setShowProfile(!showProfile)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '4px 8px',
+              borderRadius: '6px',
+              background: showProfile ? 'var(--paper-2)' : 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
+            onMouseLeave={(e) => {
+              if (!showProfile) {
+                (e.currentTarget as HTMLElement).style.background = 'transparent';
+              }
+            }}
+          >
+            {/* Avatar */}
+            <span
+              className="avatar"
+              style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'var(--accent-soft)',
+                color: 'var(--accent)',
+                fontSize: '11px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              {userInitial}
+            </span>
 
-                    <div style={{ borderTop: '1px solid var(--djmp-border)', margin: '4px 0' }} />
+            {/* Name + Role */}
+            <div
+              className="hidden md:block"
+              style={{ textAlign: 'left' }}
+            >
+              <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.2 }}>
+                {user?.name || 'User'}
+              </p>
+              <p style={{ fontSize: '11px', color: 'var(--ink-3)', lineHeight: 1.2 }}>
+                {getRoleLabel(user?.role || '')}
+              </p>
+            </div>
 
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-left"
-                      style={{ color: '#ef4444' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(239,68,68,0.08)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span>Sign Out</span>
-                    </button>
+            <ChevronDown style={{ width: '12px', height: '12px', color: 'var(--ink-4)' }} />
+          </button>
+
+          {showProfile && (
+            <div style={{ ...panelStyle, width: '240px' }}>
+              {/* Profile header */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderBottom: '1px solid var(--rule-soft)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                  <span
+                    className="avatar lg"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: 'var(--accent-soft)',
+                      color: 'var(--accent)',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {userInitial}
+                  </span>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3 }}>
+                      {user?.name || 'User'}
+                    </p>
+                    <p style={{ fontSize: '11px', color: 'var(--ink-3)', lineHeight: 1.3 }}>
+                      {user?.email || '-'}
+                    </p>
                   </div>
                 </div>
-              )}
+                <span
+                  className="pill accent"
+                  style={{ fontSize: '11px' }}
+                >
+                  {getRoleLabel(user?.role || '')}
+                </span>
+              </div>
+
+              {/* Menu items */}
+              <div style={{ padding: '6px' }}>
+                {[
+                  { icon: <User style={{ width: '14px', height: '14px' }} />, label: 'View Profile', action: handleOpenProfile },
+                  { icon: <Settings style={{ width: '14px', height: '14px' }} />, label: 'Settings', action: handleOpenSettings },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={item.action}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '8px 10px',
+                      borderRadius: '4px',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      color: 'var(--ink-2)',
+                      textAlign: 'left',
+                      transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+
+                <div style={{ height: '1px', background: 'var(--rule-soft)', margin: '4px 0' }} />
+
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 10px',
+                    borderRadius: '4px',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    color: 'var(--st-overdue)',
+                    textAlign: 'left',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--st-overdue-bg)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <LogOut style={{ width: '14px', height: '14px' }} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </nav>

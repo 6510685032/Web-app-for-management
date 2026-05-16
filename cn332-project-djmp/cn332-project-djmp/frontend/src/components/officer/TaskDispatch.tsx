@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, UserCheck, Clock, AlertCircle, Search, ClipboardList, MapPin } from 'lucide-react';
+import { ArrowLeft, UserCheck, AlertCircle, Search, ClipboardList, MapPin } from 'lucide-react';
 import api from '../../utils/api';
 
 interface PendingRequest {
@@ -22,6 +22,26 @@ interface Technician {
   email: string;
   active_tasks: number;
   completed_tasks: number;
+}
+
+function getPriorityStyle(priority: string): React.CSSProperties {
+  switch (priority) {
+    case 'high':
+      return { background: 'var(--st-overdue-bg)', color: 'var(--st-overdue)', border: '1px solid var(--st-overdue)' };
+    case 'medium':
+      return { background: 'var(--st-pending-bg)', color: 'var(--st-pending)', border: '1px solid var(--st-pending)' };
+    case 'low':
+      return { background: 'var(--st-done-bg)', color: 'var(--st-done)', border: '1px solid var(--st-done)' };
+    default:
+      return { background: 'var(--paper-2)', color: 'var(--ink-3)', border: '1px solid var(--rule)' };
+  }
+}
+
+function getAvailabilityStyle(activeTasks: number): React.CSSProperties {
+  if (activeTasks < 4) {
+    return { background: 'var(--st-done-bg)', color: 'var(--st-done)', border: '1px solid var(--st-done)' };
+  }
+  return { background: 'var(--st-pending-bg)', color: 'var(--st-pending)', border: '1px solid var(--st-pending)' };
 }
 
 export default function TaskDispatch() {
@@ -89,231 +109,401 @@ export default function TaskDispatch() {
     }
   };
 
-  const getAvailabilityColor = (activeTasks: number) => {
-    return activeTasks < 4 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'text-red-400 bg-red-500/10 border-red-500/20';
-      case 'medium': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-      case 'low': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-      default: return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
-    }
-  };
-
   return (
-    <div className="max-w-7xl mx-auto p-6 pb-40 fade-in-up">
-      <button
-        onClick={() => navigate('/officer')}
-        className="flex items-center gap-2 group transition-colors mb-6"
-        style={{ color: 'var(--djmp-text-muted)' }}
-      >
-        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-        <span className="text-sm font-semibold uppercase tracking-widest">Back to Dashboard</span>
-      </button>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 32px 160px' }} className="task-dispatch-content">
+        <style>{`
+          @media (max-width: 640px) {
+            .task-dispatch-content { padding: 16px 16px 160px !important; }
+            .dispatch-grid { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-tight mb-2" style={{ color: 'var(--djmp-text)' }}>Task Dispatch</h1>
-        <p className="text-sm font-medium" style={{ color: 'var(--djmp-text-muted)' }}>Assign maintenance requests to available technicians</p>
-      </div>
+        {/* Back button */}
+        <button
+          onClick={() => navigate('/officer')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            color: 'var(--ink-3)',
+            fontSize: 13,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+            marginBottom: 24,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
+        >
+          <ArrowLeft size={16} style={{ transition: 'transform 0.15s' }}
+            onMouseEnter={e => ((e.currentTarget as SVGElement).style.transform = 'translateX(-2px)')}
+            onMouseLeave={e => ((e.currentTarget as SVGElement).style.transform = '')}
+          />
+          <span>Back to Dashboard</span>
+        </button>
 
-      {loading ? (
-        <div className="glass-card p-20 flex flex-col items-center gap-4 text-center">
-           <div className="w-10 h-10 border-4 border-t-transparent animate-spin rounded-full" style={{ borderColor: 'var(--accent-500) transparent transparent transparent' }}></div>
-           <p className="text-sm font-bold uppercase tracking-widest" style={{ color: 'var(--djmp-text-muted)' }}>Loading Dispatch Data...</p>
+        {/* Page header */}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{
+            fontSize: 22,
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            color: 'var(--ink)',
+            margin: '0 0 6px',
+          }}>
+            Task Dispatch
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>
+            Assign maintenance requests to available technicians
+          </p>
         </div>
-      ) : (
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left: Pending Assignment */}
-          <div className="glass-card overflow-hidden border-none shadow-2xl" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-            <div className="p-6 border-b flex items-center justify-between" style={{ borderColor: 'var(--djmp-border)', background: 'var(--djmp-surface-2)' }}>
-              <h2 className="text-xl font-bold uppercase tracking-tight" style={{ color: 'var(--djmp-text)' }}>Pending Assignment</h2>
-              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest" style={{ background: 'var(--accent-100)', color: 'var(--accent-700)' }}>
-                {pendingRequests.length} Tasks
-              </span>
-            </div>
-            
-            <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
-              {pendingRequests.length === 0 ? (
-                <div className="text-center py-12 space-y-4">
-                  <ClipboardList className="w-12 h-12 mx-auto opacity-20" style={{ color: 'var(--djmp-text)' }} />
-                  <div style={{ color: 'var(--djmp-text-muted)' }}>No pending requests</div>
-                </div>
-              ) : (
-                pendingRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    onClick={() => setSelectedRequest(request.id)}
-                    className="group p-5 rounded-xl border border-transparent transition-all cursor-pointer hover:scale-[1.01]"
-                    style={{ 
-                      background: selectedRequest === request.id ? 'var(--djmp-surface)' : 'var(--djmp-surface-2)', 
-                      border: `1px solid ${selectedRequest === request.id ? 'var(--accent-500)' : 'var(--djmp-border)'}`,
-                      boxShadow: selectedRequest === request.id ? '0 0 0 1px var(--accent-500)' : 'none'
-                    }}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-black text-sm" style={{ color: 'var(--djmp-text)' }}>{request.request_code}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getPriorityColor(request.priority)}`}>
-                            {request.priority}
-                          </span>
+
+        {loading ? (
+          <div className="card" style={{ padding: '80px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+            <div style={{
+              width: 40,
+              height: 40,
+              border: '3px solid var(--rule)',
+              borderTopColor: 'var(--accent)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }} />
+            <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: 0 }}>Loading dispatch data...</p>
+          </div>
+        ) : (
+          <div
+            className="dispatch-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}
+          >
+            {/* Left: Pending Assignment */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div style={{
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid var(--rule-soft)',
+                background: 'var(--paper-2)',
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Pending Assignment</span>
+                <span className="pill pending">{pendingRequests.length} Tasks</span>
+              </div>
+
+              <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 600, overflowY: 'auto' }}>
+                {pendingRequests.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <ClipboardList size={40} style={{ color: 'var(--ink-4)', opacity: 0.4 }} />
+                    <span style={{ color: 'var(--ink-3)', fontSize: 13 }}>No pending requests</span>
+                  </div>
+                ) : (
+                  pendingRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      onClick={() => setSelectedRequest(request.id)}
+                      style={{
+                        padding: 16,
+                        borderRadius: 'var(--radius-lg)',
+                        cursor: 'pointer',
+                        transition: 'transform 0.1s, box-shadow 0.1s',
+                        background: selectedRequest === request.id ? 'var(--accent-soft)' : 'var(--paper-2)',
+                        border: selectedRequest === request.id
+                          ? '1px solid var(--accent)'
+                          : '1px solid var(--rule)',
+                        boxShadow: selectedRequest === request.id ? '0 0 0 1px var(--accent)' : 'none',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.01)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>
+                              {request.request_code}
+                            </span>
+                            <span
+                              className="pill"
+                              style={{
+                                ...getPriorityStyle(request.priority),
+                                fontSize: 10,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                              }}
+                            >
+                              {request.priority}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>
+                            {request.resident} &bull; Unit {request.unit}
+                          </p>
                         </div>
-                        <p className="text-xs font-semibold" style={{ color: 'var(--djmp-text-muted)' }}>
-                          {request.resident} • Unit {request.unit}
+                        {request.priority === 'high' && (
+                          <AlertCircle size={18} style={{ color: 'var(--st-overdue)', flexShrink: 0 }} />
+                        )}
+                      </div>
+
+                      <div style={{
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius)',
+                        marginBottom: 10,
+                        background: 'var(--paper)',
+                        border: '1px solid var(--rule-soft)',
+                      }}>
+                        <p style={{
+                          fontSize: 10,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          color: 'var(--ink-3)',
+                          margin: '0 0 4px',
+                        }}>
+                          {request.category}
+                        </p>
+                        <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {request.description}
                         </p>
                       </div>
-                      {request.priority === 'high' && (
-                        <AlertCircle className="w-5 h-5 text-red-500" />
-                      )}
-                    </div>
-                    
-                    <div className="p-3 rounded-xl mb-3 space-y-1" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: 'var(--accent-500)' }}>{request.category}</p>
-                      <p className="text-sm line-clamp-2" style={{ color: 'var(--djmp-text)' }}>{request.description}</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-1.5 text-xs font-bold" style={{ color: 'var(--djmp-text-muted)' }}>
-                      <MapPin className="w-3.5 h-3.5" />
-                      {request.location}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
 
-          {/* Right: Available Technicians */}
-          <div className="glass-card overflow-hidden border-none shadow-2xl" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-            <div className="p-6 border-b space-y-4" style={{ borderColor: 'var(--djmp-border)', background: 'var(--djmp-surface-2)' }}>
-              <h2 className="text-xl font-bold uppercase tracking-tight" style={{ color: 'var(--djmp-text)' }}>Available Technicians</h2>
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors group-focus-within:text-white" style={{ color: 'var(--djmp-text-muted)' }} />
-                <input
-                  type="text"
-                  placeholder="Search by name or specialty..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-6 py-3 rounded-xl border transition-all outline-none text-sm font-medium"
-                  style={{ 
-                    background: 'var(--djmp-input-bg)', 
-                    borderColor: 'var(--djmp-input-border)',
-                    color: 'var(--djmp-text)'
-                  }}
-                  onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-500)'}
-                  onBlur={e => e.currentTarget.style.borderColor = 'var(--djmp-input-border)'}
-                />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-3)' }}>
+                        <MapPin size={12} />
+                        {request.location}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-            
-            <div className="p-6 space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar">
-              {filteredTechnicians.map((tech) => (
-                <div
-                  key={tech.id}
-                  onClick={() => setSelectedTechnician(tech.id)}
-                  className="group p-5 rounded-xl border border-transparent transition-all cursor-pointer hover:scale-[1.01]"
-                  style={{ 
-                    background: selectedTechnician === tech.id ? 'var(--djmp-surface)' : 'var(--djmp-surface-2)', 
-                    border: `1px solid ${selectedTechnician === tech.id ? 'var(--accent-500)' : 'var(--djmp-border)'}`,
-                    boxShadow: selectedTechnician === tech.id ? '0 0 0 1px var(--accent-500)' : 'none'
-                  }}
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-black shadow-lg" style={{ background: 'var(--accent-gradient)', color: 'white' }}>
-                      {tech.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-bold truncate" style={{ color: 'var(--djmp-text)' }}>{tech.name}</h3>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${getAvailabilityColor(tech.active_tasks)}`}>
-                          {tech.active_tasks < 4 ? 'Available' : 'Busy'}
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold" style={{ color: 'var(--djmp-text-muted)' }}>{tech.specialty}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl text-center" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Active Tasks</p>
-                      <p className="text-lg font-black" style={{ color: 'var(--djmp-text)' }}>{tech.active_tasks}</p>
-                    </div>
-                    <div className="p-3 rounded-xl text-center" style={{ background: 'var(--djmp-surface)', border: '1px solid var(--djmp-border)' }}>
-                      <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Completed</p>
-                      <p className="text-lg font-black" style={{ color: 'var(--djmp-text)' }}>{tech.completed_tasks}</p>
-                    </div>
-                  </div>
+
+            {/* Right: Available Technicians */}
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <div style={{
+                padding: '16px 18px',
+                borderBottom: '1px solid var(--rule-soft)',
+                background: 'var(--paper-2)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Available Technicians</span>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search by name or specialty..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      paddingLeft: 36,
+                      paddingRight: 12,
+                      paddingTop: 9,
+                      paddingBottom: 9,
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--rule)',
+                      background: 'var(--paper)',
+                      color: 'var(--ink)',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'var(--rule)')}
+                  />
                 </div>
-              ))}
+              </div>
+
+              <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 600, overflowY: 'auto' }}>
+                {filteredTechnicians.map((tech) => {
+                  const initials = tech.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                  const availStyle = getAvailabilityStyle(tech.active_tasks);
+
+                  return (
+                    <div
+                      key={tech.id}
+                      onClick={() => setSelectedTechnician(tech.id)}
+                      style={{
+                        padding: 16,
+                        borderRadius: 'var(--radius-lg)',
+                        cursor: 'pointer',
+                        transition: 'transform 0.1s',
+                        background: selectedTechnician === tech.id ? 'var(--accent-soft)' : 'var(--paper-2)',
+                        border: selectedTechnician === tech.id
+                          ? '1px solid var(--accent)'
+                          : '1px solid var(--rule)',
+                        boxShadow: selectedTechnician === tech.id ? '0 0 0 1px var(--accent)' : 'none',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.01)'; }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = ''; }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                        <span className="avatar lg" style={{ flexShrink: 0 }}>{initials}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {tech.name}
+                            </span>
+                            <span
+                              className="pill"
+                              style={{
+                                ...availStyle,
+                                fontSize: 10,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {tech.active_tasks < 4 ? 'Available' : 'Busy'}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: 0 }}>{tech.specialty}</p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div style={{
+                          padding: '10px 12px',
+                          borderRadius: 'var(--radius)',
+                          textAlign: 'center',
+                          background: 'var(--paper)',
+                          border: '1px solid var(--rule-soft)',
+                        }}>
+                          <p className="eyebrow" style={{ marginBottom: 4 }}>Active Tasks</p>
+                          <p className="numerals" style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+                            {tech.active_tasks}
+                          </p>
+                        </div>
+                        <div style={{
+                          padding: '10px 12px',
+                          borderRadius: 'var(--radius)',
+                          textAlign: 'center',
+                          background: 'var(--paper)',
+                          border: '1px solid var(--rule-soft)',
+                        }}>
+                          <p className="eyebrow" style={{ marginBottom: 4 }}>Completed</p>
+                          <p className="numerals" style={{ fontSize: 18, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>
+                            {tech.completed_tasks}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Assignment Panel */}
-      {(selectedRequest || selectedTechnician) && (
-        <div className="fixed bottom-0 left-0 right-0 p-6 z-40 fade-in-up">
-          <div className="max-w-7xl mx-auto glass-card shadow-2xl p-6 border-none" style={{ background: 'var(--djmp-nav-bg)', borderTop: '1px solid var(--djmp-border)' }}>
-            <div className="flex flex-col md:flex-row items-end gap-6">
-              <div className="flex-1 grid sm:grid-cols-3 gap-4 w-full">
-                <div className="p-4 rounded-xl" style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)' }}>
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Selected Request</p>
-                  <p className="font-bold text-sm" style={{ color: 'var(--djmp-text)' }}>
-                    {selectedRequest ? pendingRequests.find(r => r.id === selectedRequest)?.request_code || selectedRequest : 'None'}
+        {/* Assignment bottom panel */}
+        {(selectedRequest || selectedTechnician) && (
+          <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 40,
+            padding: '16px 24px',
+            background: 'var(--paper-card)',
+            borderTop: '1px solid var(--rule)',
+            boxShadow: 'var(--shadow-lift)',
+          }}>
+            <div style={{ maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 20, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, minWidth: 0 }}>
+                {/* Selected Request */}
+                <div style={{ padding: '12px 14px', borderRadius: 'var(--radius)', background: 'var(--paper-2)', border: '1px solid var(--rule)' }}>
+                  <p className="eyebrow" style={{ marginBottom: 4 }}>Selected Request</p>
+                  <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', margin: 0 }}>
+                    {selectedRequest
+                      ? pendingRequests.find(r => r.id === selectedRequest)?.request_code ?? selectedRequest
+                      : 'None'}
                   </p>
                 </div>
-                
-                <div className="p-4 rounded-xl" style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)' }}>
-                  <p className="text-[10px] font-black uppercase tracking-widest mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Selected Technician</p>
-                  <p className="font-bold text-sm" style={{ color: 'var(--djmp-text)' }}>
-                    {selectedTechnician ? technicians.find(t => t.id === selectedTechnician)?.name || 'None' : 'None'}
+
+                {/* Selected Technician */}
+                <div style={{ padding: '12px 14px', borderRadius: 'var(--radius)', background: 'var(--paper-2)', border: '1px solid var(--rule)' }}>
+                  <p className="eyebrow" style={{ marginBottom: 4 }}>Selected Technician</p>
+                  <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', margin: 0 }}>
+                    {selectedTechnician
+                      ? technicians.find(t => t.id === selectedTechnician)?.name ?? 'None'
+                      : 'None'}
                   </p>
                 </div>
-                
+
+                {/* Schedule Date */}
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--djmp-text-muted)' }}>Schedule Date</label>
+                  <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>Schedule Date</label>
                   <input
                     type="date"
                     value={scheduledDate}
                     onChange={(e) => setScheduledDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 rounded-xl outline-none text-sm font-medium transition-all"
-                    style={{ background: 'var(--djmp-input-bg)', border: '1px solid var(--djmp-input-border)', color: 'var(--djmp-text)' }}
-                    onFocus={e => e.currentTarget.style.borderColor = 'var(--accent-500)'}
-                    onBlur={e => e.currentTarget.style.borderColor = 'var(--djmp-input-border)'}
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px',
+                      borderRadius: 'var(--radius)',
+                      border: '1px solid var(--rule)',
+                      background: 'var(--paper)',
+                      color: 'var(--ink)',
+                      fontSize: 13,
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'var(--rule)')}
                   />
                 </div>
-                
               </div>
-              
-              <div className="flex gap-3 w-full md:w-auto">
+
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={() => {
                     setSelectedRequest(null);
                     setSelectedTechnician(null);
                     setScheduledDate('');
                   }}
-                  className="px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
-                  style={{ background: 'var(--djmp-surface-2)', border: '1px solid var(--djmp-border)', color: 'var(--djmp-text)' }}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--rule)',
+                    background: 'var(--paper-2)',
+                    color: 'var(--ink)',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                  }}
                 >
                   Clear
                 </button>
                 <button
                   onClick={handleAssign}
                   disabled={!selectedRequest || !selectedTechnician || !scheduledDate || assigning}
-                  className="px-8 py-4 rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  style={{ background: 'var(--accent-gradient)' }}
+                  style={{
+                    padding: '10px 24px',
+                    borderRadius: 'var(--radius)',
+                    border: 'none',
+                    background: 'var(--accent)',
+                    color: 'var(--accent-on)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: (!selectedRequest || !selectedTechnician || !scheduledDate || assigning) ? 'not-allowed' : 'pointer',
+                    opacity: (!selectedRequest || !selectedTechnician || !scheduledDate || assigning) ? 0.5 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'opacity 0.15s, transform 0.1s',
+                  }}
+                  onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.opacity = '0.9'; }}
+                  onMouseLeave={e => { if (!e.currentTarget.disabled) e.currentTarget.style.opacity = '1'; }}
+                  onMouseDown={e => { if (!e.currentTarget.disabled) e.currentTarget.style.transform = 'scale(0.98)'; }}
+                  onMouseUp={e => { e.currentTarget.style.transform = ''; }}
                 >
-                  <UserCheck className="w-5 h-5" />
+                  <UserCheck size={16} />
                   {assigning ? 'Assigning...' : 'Assign Task'}
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
-

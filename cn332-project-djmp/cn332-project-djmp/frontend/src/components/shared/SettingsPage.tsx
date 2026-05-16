@@ -23,6 +23,12 @@ import { useNotifications } from '../../context/NotificationContext';
 
 // ── Accent colour catalogue ──────────────────────────────
 const ACCENTS: { key: AccentColor; label: string; bg: string; gradient: string }[] = [
+  // JuristicPro design accents (primary)
+  { key: 'slate',      label: 'Slate',       bg: '#3B4A57', gradient: 'linear-gradient(135deg,#3B4A57,#222A33)' },
+  { key: 'forest',     label: 'Forest',      bg: '#2D5A47', gradient: 'linear-gradient(135deg,#2D5A47,#1F3F31)' },
+  { key: 'terracotta', label: 'Terracotta',  bg: '#B85540', gradient: 'linear-gradient(135deg,#B85540,#963F2D)' },
+  { key: 'ink',        label: 'Ink',         bg: '#111318', gradient: 'linear-gradient(135deg,#111318,#000000)' },
+  // Legacy accents
   { key: 'blue',    label: 'Ocean Blue',    bg: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
   { key: 'violet',  label: 'Deep Violet',   bg: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)' },
   { key: 'emerald', label: 'Forest Green',  bg: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)' },
