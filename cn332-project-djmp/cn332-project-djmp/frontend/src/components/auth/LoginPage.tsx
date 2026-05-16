@@ -323,46 +323,6 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* ── Security Footer ── */}
-        <div style={{
-          marginTop: '28px',
-          padding: '16px',
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '14px',
-        }}>
-          {/* Shield row */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-            marginBottom: '14px',
-          }}>
-            <ShieldCheck style={{ width: '16px', height: '16px', color: '#a78bfa' }} />
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>
-              Secure Enterprise Connection Established
-            </span>
-          </div>
-
-          {/* Version tags */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1px', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden' }}>
-            {[
-              { icon: <Layers style={{ width: '16px', height: '16px' }} />, label: 'V2.4.0' },
-              { icon: <ShieldCheck style={{ width: '16px', height: '16px' }} />, label: 'STABLE' },
-              { icon: <LockIcon style={{ width: '16px', height: '16px' }} />, label: 'PROTECTED' },
-            ].map(({ icon, label }) => (
-              <div key={label} style={{
-                padding: '10px 4px',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                color: 'rgba(167,139,250,0.7)',
-              }}>
-                {icon}
-                <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1px', color: 'rgba(255,255,255,0.35)' }}>
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Bottom link */}
         <p style={{
           textAlign: 'center', marginTop: '20px', marginBottom: 0,
