@@ -10,7 +10,7 @@
     },
     {
       "parameters": {
-        "filePath": "C:\\Users\\MY_LAPTOP\\.n8n-files\\users.csv"
+        "filePath": "/n8n-files/users.csv"
       },
       "id": "7a67b7a3-3cb1-4395-afd2-7c5760bb8f94",
       "name": "Read CSV File",
@@ -49,7 +49,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://127.0.0.1:8000/api/create-user/",
+        "url": "http://django-rest:8000/api/create-user/",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [

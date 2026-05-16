@@ -8,6 +8,7 @@ services:
     image: postgres:16
     volumes:
       - ./postgresql/database:/var/lib/postgresql/data
+      - ./postgresql/init-n8n-db.sql:/docker-entrypoint-initdb.d/init-n8n-db.sql
     ports:
       - "5432:5432"
     environment:
@@ -16,10 +17,10 @@ services:
       - POSTGRES_PASSWORD=postgres
     restart: unless-stopped
 
-  django_rest:
+  django-rest:
     networks:
       - project-bridge
-    build: 
+    build:
       context: ./django-rest
       dockerfile: Dockerfile
     volumes:
@@ -37,7 +38,7 @@ services:
   vite:
     networks:
       - project-bridge
-    build: 
+    build:
       context: ./vite
       dockerfile: Dockerfile
     ports:
@@ -49,3 +50,36 @@ services:
       - CHOKIDAR_USEPOLLING=true # Fallback safety for file watching
     stdin_open: true
     tty: true
+
+  n8n:
+    networks:
+      - project-bridge
+    build:
+      context: ./n8n
+      dockerfile: Dockerfile
+    ports:
+      - "5678:5678"
+    environment:
+      # n8n database config — uses the same PostgreSQL instance
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=postgres
+      # n8n general config
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Bangkok
+      - N8N_DIAGNOSTICS_ENABLED=false
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - django-rest
+
+volumes:
+  n8n_data:
