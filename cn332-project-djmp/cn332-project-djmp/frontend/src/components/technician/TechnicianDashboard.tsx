@@ -6,6 +6,8 @@ import TechnicianSidebar from './TechnicianSidebar';
 import TechnicianHome from './TechnicianHome';
 import MyTasks from './MyTasks';
 import TaskDetail from './TaskDetail';
+import ProfilePage from '../shared/ProfilePage';
+import SettingsPage from '../shared/SettingsPage';
 
 export default function TechnicianDashboard() {
   const { user } = useUser();
@@ -18,7 +20,7 @@ export default function TechnicianDashboard() {
   }, [user, navigate]);
 
   return (
-    <div className="djmp-bg min-h-screen flex flex-col">
+    <div className="djmp-bg h-screen flex flex-col">
       <TopNavigation />
       <div className="flex flex-1 overflow-hidden">
         <TechnicianSidebar />
@@ -27,6 +29,8 @@ export default function TechnicianDashboard() {
             <Route path="/" element={<TechnicianHome />} />
             <Route path="/tasks" element={<MyTasks />} />
             <Route path="/tasks/:id" element={<TaskDetail />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/technician" replace />} />
           </Routes>
         </main>

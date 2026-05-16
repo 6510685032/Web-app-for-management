@@ -8,6 +8,8 @@ import TaskDispatch from './TaskDispatch';
 import AnalyticsDashboard from './AnalyticsDashboard';
 import KanbanBoard from './KanbanBoard';
 import TechnicianSchedule from './TechnicianSchedule';
+import ProfilePage from '../shared/ProfilePage';
+import SettingsPage from '../shared/SettingsPage';
 
 import OfficerSidebar from './OfficerSidebar';
 
@@ -22,7 +24,7 @@ export default function OfficerDashboard() {
   }, [user, navigate]);
 
   return (
-    <div className="djmp-bg flex flex-col min-h-screen overflow-hidden">
+    <div className="djmp-bg flex flex-col h-screen overflow-hidden">
       <TopNavigation />
       <div className="flex flex-1 overflow-hidden">
         <OfficerSidebar />
@@ -34,6 +36,8 @@ export default function OfficerDashboard() {
             <Route path="/analytics" element={<AnalyticsDashboard />} />
             <Route path="/kanban" element={<KanbanBoard />} />
             <Route path="/schedule" element={<TechnicianSchedule />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/officer" replace />} />
           </Routes>
         </main>

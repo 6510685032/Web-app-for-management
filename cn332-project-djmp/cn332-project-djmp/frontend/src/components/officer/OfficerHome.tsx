@@ -254,7 +254,8 @@ export default function OfficerHome() {
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
             <section>
               <SectionHead eyebrow="THE CREW" title="Technicians" italic="on duty" />
-              <div className="card" style={{ overflow: 'hidden' }}>
+              <div className="card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div style={{ maxHeight: 280, overflowY: 'auto' }}>
                 {loading ? (
                   <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--ink-4)' }}>Loading…</div>
                 ) : technicians.length === 0 ? (
@@ -289,6 +290,7 @@ export default function OfficerHome() {
                     </div>
                   );
                 })}
+                </div>
                 <div style={{ padding: '10px 16px', borderTop: '1px solid var(--rule-soft)' }}>
                   <button
                     onClick={() => navigate('/officer/schedule')}

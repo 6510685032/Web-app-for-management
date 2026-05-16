@@ -5,6 +5,7 @@ import {
   ClipboardList,
   Settings,
   HelpCircle,
+  User,
   Building2,
   LogOut,
 } from 'lucide-react';
@@ -20,7 +21,8 @@ export default function TechnicianSidebar() {
   ];
 
   const personalItems = [
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Profile', path: '/technician/profile', icon: User },
+    { name: 'Settings', path: '/technician/settings', icon: Settings },
     { name: 'Help & Support', path: '/support', icon: HelpCircle },
   ];
 

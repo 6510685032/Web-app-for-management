@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
+  User,
   Building2,
   LogOut,
 } from 'lucide-react';
@@ -28,7 +29,8 @@ export default function OfficerSidebar() {
   ];
 
   const personalItems = [
-    { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Profile', path: '/officer/profile', icon: User },
+    { name: 'Settings', path: '/officer/settings', icon: Settings },
     { name: 'Help & Support', path: '/support', icon: HelpCircle },
   ];
 
@@ -64,6 +66,7 @@ export default function OfficerSidebar() {
         background: 'var(--paper-soft)',
         display: 'flex',
         flexDirection: 'column',
+        height: '100%',
       }}
     >
       {/* ── Wordmark ── */}

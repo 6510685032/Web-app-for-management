@@ -31,8 +31,16 @@ export default function TopNavigation() {
   }, []);
 
   const handleLogout = () => { setShowProfile(false); logout(); navigate('/'); };
-  const handleOpenProfile = () => { navigate('/profile'); setShowProfile(false); };
-  const handleOpenSettings = () => { navigate('/settings'); setShowProfile(false); };
+  const handleOpenProfile = () => { 
+    const rolePath = user?.role === 'officer' || user?.role === 'admin' ? '/officer' : user?.role === 'technician' ? '/technician' : '/profile';
+    navigate(`${rolePath === '/profile' ? '/profile' : rolePath + '/profile'}`); 
+    setShowProfile(false); 
+  };
+  const handleOpenSettings = () => { 
+    const rolePath = user?.role === 'officer' || user?.role === 'admin' ? '/officer' : user?.role === 'technician' ? '/technician' : '/settings';
+    navigate(`${rolePath === '/settings' ? '/settings' : rolePath + '/settings'}`); 
+    setShowProfile(false); 
+  };
 
   const getRoleLabel = (role: string) => {
     const map: Record<string, string> = {
@@ -296,170 +304,6 @@ export default function TopNavigation() {
           )}
         </div>
 
-        {/* Profile */}
-        <div style={{ position: 'relative' }} ref={profileRef}>
-          <button
-            onClick={() => setShowProfile(!showProfile)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              background: showProfile ? 'var(--paper-2)' : 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
-            onMouseLeave={(e) => {
-              if (!showProfile) {
-                (e.currentTarget as HTMLElement).style.background = 'transparent';
-              }
-            }}
-          >
-            {/* Avatar */}
-            <span
-              className="avatar"
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '50%',
-                background: 'var(--accent-soft)',
-                color: 'var(--accent)',
-                fontSize: '11px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              {userInitial}
-            </span>
-
-            {/* Name + Role */}
-            <div
-              className="hidden md:block"
-              style={{ textAlign: 'left' }}
-            >
-              <p style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.2 }}>
-                {user?.name || 'User'}
-              </p>
-              <p style={{ fontSize: '11px', color: 'var(--ink-3)', lineHeight: 1.2 }}>
-                {getRoleLabel(user?.role || '')}
-              </p>
-            </div>
-
-            <ChevronDown style={{ width: '12px', height: '12px', color: 'var(--ink-4)' }} />
-          </button>
-
-          {showProfile && (
-            <div style={{ ...panelStyle, width: '240px' }}>
-              {/* Profile header */}
-              <div
-                style={{
-                  padding: '14px 16px',
-                  borderBottom: '1px solid var(--rule-soft)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                  <span
-                    className="avatar lg"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      background: 'var(--accent-soft)',
-                      color: 'var(--accent)',
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {userInitial}
-                  </span>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3 }}>
-                      {user?.name || 'User'}
-                    </p>
-                    <p style={{ fontSize: '11px', color: 'var(--ink-3)', lineHeight: 1.3 }}>
-                      {user?.email || '-'}
-                    </p>
-                  </div>
-                </div>
-                <span
-                  className="pill accent"
-                  style={{ fontSize: '11px' }}
-                >
-                  {getRoleLabel(user?.role || '')}
-                </span>
-              </div>
-
-              {/* Menu items */}
-              <div style={{ padding: '6px' }}>
-                {[
-                  { icon: <User style={{ width: '14px', height: '14px' }} />, label: 'View Profile', action: handleOpenProfile },
-                  { icon: <Settings style={{ width: '14px', height: '14px' }} />, label: 'Settings', action: handleOpenSettings },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={item.action}
-                    style={{
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 10px',
-                      borderRadius: '4px',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      color: 'var(--ink-2)',
-                      textAlign: 'left',
-                      transition: 'background 0.15s',
-                    }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--paper-2)'; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-
-                <div style={{ height: '1px', background: 'var(--rule-soft)', margin: '4px 0' }} />
-
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px 10px',
-                    borderRadius: '4px',
-                    background: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    color: 'var(--st-overdue)',
-                    textAlign: 'left',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--st-overdue-bg)'; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
-                >
-                  <LogOut style={{ width: '14px', height: '14px' }} />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </nav>
   );
