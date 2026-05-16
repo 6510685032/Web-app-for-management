@@ -74,6 +74,7 @@ services:
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Asia/Bangkok
       - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_RUNNERS_DISABLED=true
     volumes:
       - n8n_data:/home/node/.n8n
     restart: unless-stopped
