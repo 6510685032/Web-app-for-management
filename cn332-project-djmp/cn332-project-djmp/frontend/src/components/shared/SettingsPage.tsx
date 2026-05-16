@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft,
   Bell,
-  Shield,
-  Lock,
-  Palette,
   Globe,
   HelpCircle,
-  Info,
-  ChevronRight,
-  Smartphone,
-  Database,
-  FileText,
+  Palette,
   Sun,
   Moon,
   Check,
@@ -21,483 +13,307 @@ import { useUser } from '../../context/UserContext';
 import { useTheme, AccentColor } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
 
-// ── Accent colour catalogue ──────────────────────────────
-const ACCENTS: { key: AccentColor; label: string; bg: string; gradient: string }[] = [
-  // JuristicPro design accents (primary)
-  { key: 'slate', label: 'Slate', bg: '#3B4A57', gradient: 'linear-gradient(135deg,#3B4A57,#222A33)' },
-  { key: 'forest', label: 'Forest', bg: '#2D5A47', gradient: 'linear-gradient(135deg,#2D5A47,#1F3F31)' },
-  { key: 'terracotta', label: 'Terracotta', bg: '#B85540', gradient: 'linear-gradient(135deg,#B85540,#963F2D)' },
-  { key: 'ink', label: 'Ink', bg: '#111318', gradient: 'linear-gradient(135deg,#111318,#000000)' },
-  // Legacy accents
-  { key: 'blue', label: 'Ocean Blue', bg: '#3b82f6', gradient: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
-  { key: 'violet', label: 'Deep Violet', bg: '#8b5cf6', gradient: 'linear-gradient(135deg,#8b5cf6,#ec4899)' },
-  { key: 'emerald', label: 'Forest Green', bg: '#10b981', gradient: 'linear-gradient(135deg,#10b981,#06b6d4)' },
-  { key: 'rose', label: 'Cherry Rose', bg: '#f43f5e', gradient: 'linear-gradient(135deg,#f43f5e,#fb923c)' },
-  { key: 'amber', label: 'Warm Amber', bg: '#f59e0b', gradient: 'linear-gradient(135deg,#f59e0b,#ef4444)' },
-  { key: 'cyan', label: 'Crystal Cyan', bg: '#06b6d4', gradient: 'linear-gradient(135deg,#06b6d4,#3b82f6)' },
-  { key: 'indigo', label: 'Midnight Indigo', bg: '#6366f1', gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
-  { key: 'teal', label: 'Pacific Teal', bg: '#14b8a6', gradient: 'linear-gradient(135deg,#14b8a6,#3b82f6)' },
+// ── Accent colour catalogue ──
+const ACCENTS: { key: AccentColor; label: string; bg: string }[] = [
+  { key: 'slate',      label: 'Slate',      bg: 'linear-gradient(135deg,#3B4A57,#222A33)' },
+  { key: 'forest',     label: 'Forest',     bg: 'linear-gradient(135deg,#2D5A47,#1F3F31)' },
+  { key: 'terracotta', label: 'Terracotta', bg: 'linear-gradient(135deg,#B85540,#963F2D)' },
+  { key: 'ink',        label: 'Ink',        bg: 'linear-gradient(135deg,#111318,#000000)' },
+  { key: 'blue',       label: 'Ocean Blue', bg: 'linear-gradient(135deg,#3b82f6,#6366f1)' },
+  { key: 'violet',     label: 'Violet',     bg: 'linear-gradient(135deg,#8b5cf6,#ec4899)' },
+  { key: 'emerald',    label: 'Emerald',    bg: 'linear-gradient(135deg,#10b981,#06b6d4)' },
+  { key: 'rose',       label: 'Rose',       bg: 'linear-gradient(135deg,#f43f5e,#fb923c)' },
 ];
 
-// ── Simple setting row (non-interactive) ─────────────────
-type SettingRowProps = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  status?: string;
-};
-function SettingRow({ icon, title, description, status }: SettingRowProps) {
+// ── Setting row ──
+function SettingRow({ icon, title, description, right }: {
+  icon: React.ReactNode; title: string; description: string; right?: React.ReactNode;
+}) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 16,
+      padding: '14px 0',
+    }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+        background: 'var(--accent-soft)', color: 'var(--accent)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)' }}>{title}</div>
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{description}</div>
+      </div>
+      {right && <div style={{ flexShrink: 0 }}>{right}</div>}
+    </div>
+  );
+}
+
+// ── JP-style toggle switch ──
+function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
     <button
-      className="w-full flex items-center justify-between rounded-2xl p-4 hover:bg-[var(--accent-shimmer)] transition-colors text-left"
-      style={{
-        background: 'var(--djmp-surface-2)',
-        border: '1px solid var(--djmp-border)',
-      }}
+      onClick={onToggle}
       type="button"
+      style={{
+        position: 'relative', display: 'inline-flex',
+        width: 40, height: 22, borderRadius: 999,
+        background: enabled ? 'var(--accent)' : 'var(--rule)',
+        border: 'none', cursor: 'pointer', transition: 'background 0.2s',
+        flexShrink: 0,
+      }}
     >
-      <div className="flex items-start gap-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-600)' }}
-        >
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--djmp-text)' }}>
-            {title}
-          </h3>
-          <p className="text-sm mt-1" style={{ color: 'var(--djmp-text-muted)' }}>
-            {description}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 shrink-0 ml-4">
-        {status && (
-          <span
-            className="hidden sm:inline-flex px-3 py-1 rounded-full text-xs font-medium"
-            style={{ background: 'var(--accent-100)', color: 'var(--accent-700)' }}
-          >
-            {status}
-          </span>
-        )}
-        <ChevronRight className="w-5 h-5" style={{ color: 'var(--djmp-text-muted)' }} />
-      </div>
+      <span style={{
+        position: 'absolute',
+        top: 3, left: enabled ? 21 : 3,
+        width: 16, height: 16,
+        borderRadius: '50%',
+        background: 'white',
+        transition: 'left 0.2s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
     </button>
   );
 }
 
-// ── Toggle setting row (interactive) ─────────────────────
-type ToggleRowProps = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  enabled: boolean;
-  onToggle: () => void;
-};
-function ToggleRow({ icon, title, description, enabled, onToggle }: ToggleRowProps) {
+// ── Section wrapper ──
+function Section({ title, sub, children }: { title: string; sub: string; children: React.ReactNode }) {
   return (
-    <div
-      className="w-full flex items-center justify-between rounded-2xl p-4 transition-colors text-left"
-      style={{
-        background: 'var(--djmp-surface-2)',
-        border: '1px solid var(--djmp-border)',
-      }}
-    >
-      <div className="flex items-start gap-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-600)' }}
-        >
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-base font-semibold" style={{ color: 'var(--djmp-text)' }}>
-            {title}
-          </h3>
-          <p className="text-sm mt-1" style={{ color: 'var(--djmp-text-muted)' }}>
-            {description}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-3 shrink-0 ml-4">
-        <button
-          onClick={onToggle}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors`}
-          style={enabled ? { background: 'var(--accent-gradient)' } : { background: 'rgba(150, 150, 150, 0.3)' }}
-          type="button"
-        >
-          <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ── Section card wrapper ─────────────────────────────────
-function SectionCard({
-  title,
-  subtitle,
-  children,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="glass-card p-6"
-      style={{ background: 'var(--djmp-surface)' }}
-    >
-      <div className="mb-5">
-        <h2 className="text-2xl font-bold" style={{ color: 'var(--djmp-text)' }}>
+    <div>
+      <div style={{ marginBottom: 12 }}>
+        <div className="eyebrow" style={{ marginBottom: 4 }}>{title.toUpperCase()}</div>
+        <h2 style={{
+          fontFamily: 'var(--font-display)', fontSize: 22, margin: 0,
+          fontWeight: 700, letterSpacing: '-0.02em',
+        }}>
           {title}
         </h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
-          {subtitle}
-        </p>
+        <p style={{ margin: '6px 0 0', fontSize: 13, color: 'var(--ink-3)' }}>{sub}</p>
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="card" style={{ padding: '0 20px' }}>
+        {React.Children.map(children, (child, i) => (
+          <>
+            {i > 0 && <div style={{ height: 1, background: 'var(--rule-soft)' }} />}
+            {child}
+          </>
+        ))}
+      </div>
     </div>
   );
 }
 
-function AppearancePanel() {
+export default function SettingsPage() {
+  const { user } = useUser();
   const { theme, setMode, setAccent } = useTheme();
-  const [isOpen, setIsOpen] = useState(false);
+  const { isEnabled, toggleEnabled } = useNotifications();
   const [saved, setSaved] = useState(false);
 
-  const handleAccent = (accent: AccentColor) => {
-    setAccent(accent);
+  const handleAccent = (ac: AccentColor) => {
+    setAccent(ac);
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };
 
-  const handleMode = (mode: 'light' | 'dark') => {
-    setMode(mode);
+  const handleMode = (m: 'light' | 'dark') => {
+    setMode(m);
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
+  };
+
+  const role = user?.role || 'resident';
+  const roleLabel: Record<string, string> = {
+    admin: 'System Admin', officer: 'Juristic Officer',
+    technician: 'Technician', resident: 'Resident',
   };
 
   return (
-    /* No overflow:hidden here — lets the accordion grow freely */
-    <div
-      className="glass-card"
-      style={{ overflow: isOpen ? 'visible' : 'hidden' }}
-    >
-      {/* ── Header / Toggle ── */}
-      <button
-        onClick={() => setIsOpen(o => !o)}
-        className="w-full p-6 flex items-center justify-between text-left transition-colors"
-        style={{ borderRadius: 'inherit' }}
-        type="button"
-      >
-        <div className="flex items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-600)' }}
-          >
-            <Palette size={22} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold" style={{ color: 'var(--djmp-text)' }}>
-              Appearance
-            </h2>
-            <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
-              Theme &amp; accent colour
+    <div style={{ overflowY: 'auto', height: '100%' }}>
+      {/* ── JP editorial page header ── */}
+      <header style={{ padding: '32px 40px 24px', borderBottom: '1px solid var(--rule-soft)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 24, flexWrap: 'wrap' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>PREFERENCES · {roleLabel[role]?.toUpperCase()}</div>
+            <h1 className="display" style={{ margin: 0, fontSize: 38, lineHeight: 1.06 }}>
+              Application
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 400, color: 'var(--ink-3)', letterSpacing: '-0.01em' }}> settings.</span>
+            </h1>
+            <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 640 }}>
+              Manage appearance, notifications, and account preferences.
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
           {saved && (
-            <span
-              className="text-xs font-bold px-2.5 py-1 rounded-lg"
-              style={{ background: 'var(--accent-shimmer)', color: 'var(--accent-700)' }}
-            >
-              ✓ Applied
+            <span className="pill done" style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Check size={11} /> Saved
             </span>
           )}
-          <ChevronRight
-            className={`w-6 h-6 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}
-            style={{ color: 'var(--djmp-text-muted)' }}
-          />
         </div>
-      </button>
+      </header>
 
-      {/* ── Expandable Content ── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateRows: isOpen ? '1fr' : '0fr',
-          transition: 'grid-template-rows 0.4s ease',
-        }}
-      >
-        <div style={{ overflow: 'hidden' }}>
-          <div className="px-6 pb-8 space-y-8" style={{ borderTop: '1px solid var(--djmp-border)' }}>
+      <div style={{ padding: '32px 40px 48px', display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: 40, alignItems: 'start' }}>
 
-            {/* ── Colour Mode ── */}
-            <div className="pt-6">
-              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--djmp-text-muted)' }}>
-                Colour Mode
-              </p>
+        {/* ── LEFT column ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
-              {/* Toggle pill */}
-              <div className="mode-toggle-pill w-fit mb-5">
-                <button
-                  className={`mode-toggle-option flex items-center gap-2 ${theme.mode === 'light' ? 'active' : ''}`}
-                  onClick={() => handleMode('light')}
-                  type="button"
-                >
-                  <Sun size={14} /> Light
-                </button>
-                <button
-                  className={`mode-toggle-option flex items-center gap-2 ${theme.mode === 'dark' ? 'active' : ''}`}
-                  onClick={() => handleMode('dark')}
-                  type="button"
-                >
-                  <Moon size={14} /> Dark
-                </button>
-              </div>
-
-              {/* Mini preview cards */}
-              <div className="grid grid-cols-2 gap-3">
-                {(['light', 'dark'] as const).map((m) => (
-                  <div
-                    key={m}
-                    onClick={() => handleMode(m)}
-                    className="cursor-pointer rounded-xl p-3 transition-all"
-                    style={{
-                      background: m === 'light' ? '#f1f5f9' : '#0f172a',
-                      border: `2px solid ${theme.mode === m ? 'var(--accent-500)' : 'transparent'}`,
-                      boxShadow: theme.mode === m ? '0 0 0 3px var(--accent-shimmer)' : 'none',
-                    }}
-                  >
-                    <div className="space-y-2">
-                      <div className={`h-1.5 w-10 rounded-full ${m === 'light' ? 'bg-slate-300' : 'bg-slate-600'}`} />
-                      <div
-                        className="h-5 w-full rounded-lg"
-                        style={{ background: m === 'light' ? 'white' : 'rgba(255,255,255,0.06)', border: '1px solid rgba(0,0,0,0.06)' }}
-                      />
-                      <div className="h-3 w-full rounded" style={{ background: 'var(--accent-gradient)' }} />
-                    </div>
-                    <p
-                      className="text-center text-[11px] font-semibold mt-2"
-                      style={{ color: m === 'light' ? '#64748b' : '#94a3b8' }}
+          {/* Appearance */}
+          <Section title="Appearance" sub="Theme mode and accent colour for the interface.">
+            {/* Mode row */}
+            <SettingRow
+              icon={theme.mode === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+              title="Colour mode"
+              description="Switch between light and dark interface."
+              right={
+                <div style={{ display: 'flex', gap: 4, background: 'var(--paper-2)', borderRadius: 8, padding: 3 }}>
+                  {(['light', 'dark'] as const).map(m => (
+                    <button
+                      key={m}
+                      onClick={() => handleMode(m)}
+                      style={{
+                        padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                        fontSize: 12, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5,
+                        background: theme.mode === m ? 'var(--paper-card)' : 'transparent',
+                        color: theme.mode === m ? 'var(--ink)' : 'var(--ink-3)',
+                        boxShadow: theme.mode === m ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                        transition: 'all 0.15s',
+                      }}
                     >
-                      {m === 'light' ? '☀️ Light' : '🌙 Dark'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+                      {m === 'light' ? <Sun size={12} /> : <Moon size={12} />}
+                      {m.charAt(0).toUpperCase() + m.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              }
+            />
 
-            {/* ── Accent Palette (4×2 grid) ── */}
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--djmp-text-muted)' }}>
-                Accent Colour
-              </p>
-
-              {/* 4×2 checkerboard palette */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '10px',
-                }}
-              >
-                {ACCENTS.map((ac) => (
+            {/* Accent picker */}
+            <div style={{ paddingBottom: 16 }}>
+              <div className="eyebrow" style={{ marginBottom: 10, marginTop: 4 }}>ACCENT COLOUR</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8 }}>
+                {ACCENTS.map(ac => (
                   <button
                     key={ac.key}
-                    type="button"
                     title={ac.label}
                     onClick={() => handleAccent(ac.key)}
                     style={{
-                      background: ac.gradient,
-                      aspectRatio: '1 / 1',
-                      borderRadius: '12px',
-                      border: theme.accent === ac.key
-                        ? '3px solid white'
-                        : '3px solid transparent',
-                      outline: theme.accent === ac.key
-                        ? '2px solid var(--accent-500)'
-                        : '2px solid transparent',
-                      outlineOffset: '2px',
-                      cursor: 'pointer',
-                      transition: 'transform 0.15s, outline 0.15s',
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
+                      aspectRatio: '1', borderRadius: 8, background: ac.bg,
+                      border: theme.accent === ac.key ? '2px solid var(--paper)' : '2px solid transparent',
+                      outline: theme.accent === ac.key ? '2px solid var(--accent)' : '2px solid transparent',
+                      outlineOffset: 2, cursor: 'pointer',
+                      position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'transform 0.12s',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.12)')}
                     onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
                     {theme.accent === ac.key && (
-                      <Check size={18} style={{ color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} strokeWidth={3} />
+                      <Check size={14} style={{ color: 'white', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} strokeWidth={3} />
                     )}
                   </button>
                 ))}
               </div>
-
-              {/* Label row below palette */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '10px',
-                  marginTop: '6px',
-                }}
-              >
-                {ACCENTS.map((ac) => (
-                  <p
-                    key={ac.key}
-                    className="text-[10px] text-center font-medium truncate"
-                    style={{ color: theme.accent === ac.key ? 'var(--accent-600)' : 'var(--djmp-text-muted)' }}
-                  >
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8, marginTop: 5 }}>
+                {ACCENTS.map(ac => (
+                  <p key={ac.key} style={{ fontSize: 9.5, textAlign: 'center', color: theme.accent === ac.key ? 'var(--accent)' : 'var(--ink-4)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {ac.label}
                   </p>
                 ))}
               </div>
             </div>
+          </Section>
 
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+          {/* Notifications */}
+          <Section title="Notifications" sub="Control how and when you receive alerts.">
+            <SettingRow
+              icon={<Bell size={16} />}
+              title="Push notifications"
+              description="Receive instant updates for maintenance progress and approvals."
+              right={<Toggle enabled={isEnabled} onToggle={() => toggleEnabled(!isEnabled)} />}
+            />
+          </Section>
 
-// ── Main SettingsPage ────────────────────────────────────
-export default function SettingsPage() {
-  const navigate = useNavigate();
-  const { user } = useUser();
-  const role = user?.role || 'resident';
+          {/* Language */}
+          <Section title="Language & Region" sub="Language and formatting preferences.">
+            <SettingRow
+              icon={<Globe size={16} />}
+              title="Language"
+              description="Interface language and regional date formats."
+              right={<span className="pill" style={{ background: 'var(--paper-2)', color: 'var(--ink-3)', fontSize: 11 }}>English</span>}
+            />
+          </Section>
 
-  // Notification Preferences from Global Context
-  const { isEnabled, toggleEnabled } = useNotifications();
-
-  const handleBackToDashboard = () => navigate(`/${role}`);
-
-  const getRoleBadgeColor = (r: string) => {
-    const map: Record<string, string> = {
-      admin: 'var(--accent-100)',
-      officer: 'var(--accent-100)',
-      technician: 'var(--accent-100)',
-      resident: 'var(--accent-100)',
-    };
-    return map[r] || 'var(--accent-100)';
-  };
-
-  return (
-    <div className="djmp-bg">
-      <div
-        className="max-w-7xl mx-auto p-6"
-        style={{ position: 'relative', zIndex: 1 }}
-      >
-        <button
-          onClick={handleBackToDashboard}
-          className="inline-flex items-center gap-2 mb-6 font-medium transition-colors"
-          style={{ color: 'var(--accent-600)' }}
-        >
-          <ArrowLeft size={20} />
-          <span>Back to Dashboard</span>
-        </button>
-
-        {/* Header banner */}
-        <div
-          className="rounded-3xl p-6 md:p-8 mb-6 text-white"
-          style={{ background: 'var(--accent-gradient)', boxShadow: '0 8px 32px var(--accent-glow)' }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <p className="text-white/70 text-sm font-medium mb-2">Preferences Center</p>
-              <h1 className="text-3xl md:text-4xl font-bold">Application Settings</h1>
-              <p className="text-white/80 mt-2 max-w-2xl">
-                Manage notification preferences, privacy controls, app behavior, and appearance.
-              </p>
-            </div>
-            <div
-              className="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-white/20 border border-white/30 backdrop-blur-sm self-start"
-            >
-              {role.charAt(0).toUpperCase() + role.slice(1)}
-            </div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Left column — main sections */}
-          <div className="xl:col-span-2 space-y-6">
+        {/* ── RIGHT aside ── */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-            {/* ── APPEARANCE — interactive ── */}
-            <AppearancePanel />
-
-            <SectionCard
-              title="Notifications & Alerts"
-              subtitle="Control how the system informs you about requests, updates, and announcements."
-            >
-              <ToggleRow
-                icon={<Bell size={22} />}
-                title="Push Notifications"
-                description="Receive instant updates for maintenance progress, approvals, and important alerts."
-                enabled={isEnabled}
-                onToggle={() => toggleEnabled(!isEnabled)}
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Language & Region"
-              subtitle="Set language, region, and date format preferences."
-            >
-              <SettingRow
-                icon={<Globe size={22} />}
-                title="Language & Region"
-                description="Set language, region, and formatting preferences for dates and content display."
-                status="English"
-              />
-            </SectionCard>
-
-            <SectionCard
-              title="Help & Support"
-              subtitle="Find guidance, support channels, and useful information about the platform."
-            >
-              <SettingRow
-                icon={<HelpCircle size={22} />}
-                title="Support Center"
-                description="Get help with account issues, request workflows, and general platform usage."
-                status="Available"
-              />
-            </SectionCard>
-          </div>
-
-          {/* Right column — info panels */}
-          <div className="space-y-6">
-            <div className="glass-card p-6" style={{ background: 'var(--djmp-surface)' }}>
-              <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--djmp-text)' }}>
-                Quick Notes
-              </h2>
-              <div className="space-y-4">
+          {/* Account card */}
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>YOUR ACCOUNT</div>
+            <div className="card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div
+                  className="avatar lg"
+                  style={{
+                    width: 44, height: 44, borderRadius: '50%',
+                    background: 'var(--accent-soft)', color: 'var(--accent)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 16, fontWeight: 600, flexShrink: 0,
+                  }}
+                >
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{user?.name || 'User'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{user?.email || '—'}</div>
+                </div>
+              </div>
+              <div style={{ height: 1, background: 'var(--rule-soft)', marginBottom: 12 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {[
-                  { label: 'Notification Ready', desc: 'Stay updated with request progress and important community messages.', color: 'var(--accent-shimmer)', textColor: 'var(--accent-700)' },
-                  { label: 'Security Status', desc: 'Your account area is currently protected by role-based access.', color: 'rgba(16,185,129,0.1)', textColor: '#047857' },
-                  { label: 'Preference Live', desc: 'Changes to Appearance are applied instantly — no page reload needed.', color: 'rgba(245,158,11,0.1)', textColor: '#b45309' },
-                ].map((n) => (
-                  <div
-                    key={n.label}
-                    className="rounded-2xl p-4"
-                    style={{ background: n.color, border: `1px solid ${n.color}` }}
-                  >
-                    <div className="font-semibold text-sm" style={{ color: n.textColor }}>
-                      {n.label}
-                    </div>
-                    <p className="text-xs mt-1" style={{ color: n.textColor, opacity: 0.85 }}>
-                      {n.desc}
-                    </p>
+                  { label: 'Role', value: roleLabel[role] || role },
+                  { label: 'Status', value: 'Active' },
+                ].map(row => (
+                  <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>{row.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--ink)' }}>{row.value}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Quick notes */}
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>NOTES</div>
+            <div className="card" style={{ padding: '4px 0' }}>
+              {[
+                { title: 'Theme applies instantly', body: 'Colour mode and accent changes take effect immediately — no reload needed.' },
+                { title: 'Role-based access', body: 'Your account is protected by role-based access controls.' },
+                { title: 'Notifications', body: 'Push notifications require browser permission to be enabled.' },
+              ].map((note, i, arr) => (
+                <div key={note.title} style={{ padding: '12px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--rule-soft)' : 'none' }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--ink)', marginBottom: 3 }}>{note.title}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.45 }}>{note.body}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Help */}
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>SUPPORT</div>
+            <div className="card" style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <HelpCircle size={16} style={{ color: 'var(--ink-3)' }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>Support Center</div>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-3)' }}>Available — Mon–Fri 08:00–17:00</div>
+              </div>
+            </div>
+          </div>
+
+        </aside>
       </div>
     </div>
   );

@@ -97,22 +97,6 @@ export default function TopNavigation() {
         gap: '12px',
       }}
     >
-      {/* Brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Building2
-          style={{ width: '16px', height: '16px', color: 'var(--accent)', flexShrink: 0 }}
-        />
-        <span
-          style={{
-            fontWeight: 600,
-            fontSize: '14px',
-            color: 'var(--ink)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          JuristicPro
-        </span>
-      </div>
 
       {/* Right actions */}
       <div

@@ -22,6 +22,22 @@ function PageLoader() {
   return <div>Loading...</div>;
 }
 
+function ProfileRedirect() {
+  const { user } = useUser();
+  if (!user) return <Navigate to="/" replace />;
+  const rolePath = user.role === 'officer' || user.role === 'admin' ? '/officer' : user.role === 'technician' ? '/technician' : null;
+  if (!rolePath) return <ProfilePage />;
+  return <Navigate to={`${rolePath}/profile`} replace />;
+}
+
+function SettingsRedirect() {
+  const { user } = useUser();
+  if (!user) return <Navigate to="/" replace />;
+  const rolePath = user.role === 'officer' || user.role === 'admin' ? '/officer' : user.role === 'technician' ? '/technician' : null;
+  if (!rolePath) return <SettingsPage />;
+  return <Navigate to={`${rolePath}/settings`} replace />;
+}
+
 export default function App() {
   return (
     <Router>
@@ -73,7 +89,7 @@ export default function App() {
                   <ProtectedRoute
                     allowedRoles={["resident", "officer", "technician", "admin"]}
                   >
-                    <ProfilePage />
+                    <ProfileRedirect />
                   </ProtectedRoute>
                 }
               />
@@ -84,7 +100,7 @@ export default function App() {
                   <ProtectedRoute
                     allowedRoles={["resident", "officer", "technician", "admin"]}
                   >
-                    <SettingsPage />
+                    <SettingsRedirect />
                   </ProtectedRoute>
                 }
               />
