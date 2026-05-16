@@ -1,4 +1,6 @@
 {
+  "id": "1",
+  "name": "CN332 User Import",
   "nodes": [
     {
       "parameters": {},
@@ -10,7 +12,7 @@
     },
     {
       "parameters": {
-        "filePath": "/n8n-files/users.csv"
+        "filePath": "/home/node/.n8n-files/users.csv"
       },
       "id": "7a67b7a3-3cb1-4395-afd2-7c5760bb8f94",
       "name": "Read CSV File",
