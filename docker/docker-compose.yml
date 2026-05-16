@@ -1,0 +1,51 @@
+networks:
+  project-bridge:
+    driver: bridge
+services:
+  postgres:
+    networks:
+      - project-bridge
+    image: postgres:16
+    volumes:
+      - ./postgresql/database:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=cn332
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: unless-stopped
+
+  django_rest:
+    networks:
+      - project-bridge
+    build: 
+      context: ./django-rest
+      dockerfile: Dockerfile
+    volumes:
+      - ./django-rest:/code
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_NAME=cn332
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: on-failure
+    depends_on:
+      - postgres
+
+  vite:
+    networks:
+      - project-bridge
+    build: 
+      context: ./vite
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./vite:/app
+      - /app/node_modules # Prevents Docker from overwriting container node_modules with local ones
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Fallback safety for file watching
+    stdin_open: true
+    tty: true

@@ -1,0 +1,195 @@
+/* ── Theme Tokens ── */
+:root, .light {
+  --djmp-bg:          #f8fafc;
+  --djmp-surface:     rgba(255,255,255,0.92);
+  --djmp-surface-2:   rgba(241,245,249,0.8);
+  --djmp-border:      rgba(15,23,42,0.12);
+  --djmp-border-hi:   rgba(255,255,255,1);
+  --djmp-text:        #0f172a;
+  --djmp-text-muted:  #475569;
+  --djmp-nav-bg:      rgba(255,255,255,0.85);
+  --djmp-nav-border:  rgba(15,23,42,0.08);
+  --djmp-input-bg:    #ffffff;
+  --djmp-input-border:rgba(15,23,42,0.15);
+}
+
+.dark {
+  --djmp-bg:          #010208; /* Deepest Black */
+  --djmp-surface:     rgba(15,23,42,0.85);
+  --djmp-surface-2:   rgba(8,14,32,0.90);
+  --djmp-border:      rgba(255,255,255,0.15);
+  --djmp-border-hi:   rgba(255,255,255,0.1);
+  --djmp-text:        #ffffff;
+  --djmp-text-muted:  #94a3b8;
+  --djmp-nav-bg:      rgba(1,2,8,0.9);
+  --djmp-nav-border:  rgba(255,255,255,0.1);
+  --djmp-input-bg:    rgba(8,14,32,0.8);
+  --djmp-input-border:rgba(255,255,255,0.25);
+}
+
+/* ── Global Styles ── */
+html, body {
+  background-color: var(--djmp-bg) !important;
+  color: var(--djmp-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Keyframes ── */
+@keyframes djmp-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-20px) scale(1.03); }
+}
+@keyframes djmp-float-slow {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-12px) scale(1.015); }
+}
+@keyframes djmp-fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes djmp-gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Page Background & Blobs ── */
+.djmp-bg {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.djmp-bg::before,
+.djmp-bg::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dark .djmp-bg::before {
+  width: 700px; height: 700px;
+  top: -200px; left: -200px;
+  background: var(--accent-500);
+  animation: djmp-float 12s ease-in-out infinite;
+}
+.dark .djmp-bg::after {
+  width: 600px; height: 600px;
+  bottom: -150px; right: -150px;
+  background: var(--accent-700);
+  animation: djmp-float-slow 16s ease-in-out infinite;
+}
+
+/* ── Glass Components ── */
+.glass-card {
+  background: var(--djmp-surface);
+  border: 1px solid var(--djmp-border);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08), inset 0 1px 0 var(--djmp-border-hi);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+.glass-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px var(--djmp-border), inset 0 1px 0 var(--djmp-border-hi);
+  transform: translateY(-1px);
+}
+
+.glass-nav {
+  background: var(--djmp-nav-bg);
+  border-bottom: 1px solid var(--djmp-nav-border);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 1px 20px rgba(0,0,0,0.08);
+}
+
+.gradient-text {
+  background: var(--accent-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: djmp-gradient-shift 6s ease infinite;
+}
+
+.btn-accent {
+  background: var(--accent-gradient);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 15px var(--accent-glow);
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.btn-accent:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+
+/* ── Utilities ── */
+.fade-in-up {
+  animation: djmp-fadeInUp 0.6s ease forwards;
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(90deg, var(--djmp-surface-2) 25%, var(--djmp-border) 50%, var(--djmp-surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+.mode-toggle-pill {
+  display: flex;
+  background: var(--djmp-surface-2);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--djmp-border);
+}
+.mode-toggle-option {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: var(--djmp-text-muted);
+}
+.mode-toggle-option.active {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+/* ── Custom Scrollbar ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 150, 0.3);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 150, 0.5);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
