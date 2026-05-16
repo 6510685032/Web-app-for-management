@@ -22,10 +22,6 @@ export default function TechnicianSidebar() {
     { name: 'Knowledge Base', path: '/technician/knowledge', icon: BookOpen },
   ];
 
-  const secondaryItems = [
-    { name: 'Notifications', path: '/technician/notifications', icon: Bell, badge: 2 },
-    { name: 'Messages', path: '/technician/messages', icon: MessageSquare },
-  ];
 
   const bottomItems = [
     { name: 'Settings', path: '/settings', icon: Settings },
@@ -69,36 +65,6 @@ export default function TechnicianSidebar() {
 
         <div className="my-6 border-t" style={{ borderColor: 'var(--djmp-border)' }} />
 
-        {secondaryItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
-                  ? 'text-white shadow-lg'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
-                }`
-              }
-              style={({ isActive }) =>
-                isActive ? { background: 'var(--accent-gradient)' } : {}
-              }
-            >
-              <div className="flex items-center gap-3">
-                <Icon className={`w-5 h-5 transition-transform group-hover:scale-110`} />
-                <span className="font-medium text-sm">{item.name}</span>
-              </div>
-              {item.badge && (
-                <span className="px-1.5 py-0.5 rounded-md bg-red-500 text-[10px] font-bold text-white shadow-sm">
-                  {item.badge}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-
-        <div className="my-6 border-t" style={{ borderColor: 'var(--djmp-border)' }} />
 
         {bottomItems.map((item) => {
           const Icon = item.icon;
@@ -121,28 +87,6 @@ export default function TechnicianSidebar() {
             </NavLink>
           );
         })}
-      </div>
-
-      <div className="p-4 mt-auto">
-         <div 
-          className="p-4 rounded-2xl flex flex-col items-center text-center space-y-2 group cursor-pointer overflow-hidden relative"
-          style={{ 
-            background: 'var(--djmp-surface-2)',
-            border: '1px solid var(--djmp-border)'
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/10 relative z-10">
-             {/* Placeholder for small avatar in footer */}
-             <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
-                TH
-             </div>
-          </div>
-          <div className="relative z-10">
-            <p className="text-xs font-bold truncate w-full" style={{ color: 'var(--djmp-text)' }}>Technician Portal</p>
-            <p className="text-[10px]" style={{ color: 'var(--djmp-text-muted)' }}>V2.4.0 Build 2026</p>
-          </div>
-        </div>
       </div>
     </div>
   );

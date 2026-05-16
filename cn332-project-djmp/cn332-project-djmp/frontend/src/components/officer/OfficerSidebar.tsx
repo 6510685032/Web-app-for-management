@@ -83,21 +83,6 @@ export default function OfficerSidebar() {
           );
         })}
       </div>
-
-      <div className="p-4 border-t" style={{ borderColor: 'var(--djmp-border)' }}>
-        <div className="p-4 rounded-xl" style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid var(--djmp-border)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-white">System Status</span>
-            <span className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
-          </div>
-          <p className="text-[10px]" style={{ color: 'var(--djmp-text-muted)' }}>All systems operational</p>
-
-          <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-center text-[10px]">
-            <span style={{ color: 'var(--djmp-text-muted)' }}>Version</span>
-            <span className="font-mono text-white">V2.4.0 STABLE</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
