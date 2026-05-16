@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, Calendar, Timer, MapPin, ChevronRight, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Search, Filter, Calendar, Timer, MapPin, ChevronRight, ClipboardList, AlertCircle } from 'lucide-react';
 import StatusBadge, { Status } from '../shared/StatusBadge';
 import api from '../../utils/api';
 
@@ -63,6 +63,7 @@ export default function MyTasks() {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [startingTaskId, setStartingTaskId] = useState<string | number | null>(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -80,6 +81,24 @@ export default function MyTasks() {
     };
     fetchTasks();
   }, []);
+
+  const handleStartTask = async (e: React.MouseEvent, taskId: string | number) => {
+    e.stopPropagation();
+    if (startingTaskId !== null) return;
+    setStartingTaskId(taskId);
+    try {
+      const response = await api.patch(`/tasks/${taskId}/`, { status: 'in-progress' });
+      const updatedStatus = (response.data?.task?.status || 'in-progress') as Status;
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: updatedStatus } : t))
+      );
+    } catch (error: any) {
+      console.error('Error starting task:', error);
+      alert(error?.response?.data?.error || 'ไม่สามารถเริ่มงานได้');
+    } finally {
+      setStartingTaskId(null);
+    }
+  };
 
   const filteredTasks = useMemo(() => {
     return tasks
@@ -262,10 +281,12 @@ export default function MyTasks() {
 
                     {task.status === 'assigned' && (
                       <button
-                        className="px-4 py-2 rounded-lg text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all active:scale-95"
+                        onClick={(e) => handleStartTask(e, task.id)}
+                        disabled={startingTaskId === task.id}
+                        className="px-4 py-2 rounded-lg text-white text-xs font-black uppercase tracking-widest shadow-lg transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                         style={{ background: 'var(--accent-gradient)' }}
                       >
-                        Start Task
+                        {startingTaskId === task.id ? 'Starting...' : 'Start Task'}
                       </button>
                     )}
                   </div>

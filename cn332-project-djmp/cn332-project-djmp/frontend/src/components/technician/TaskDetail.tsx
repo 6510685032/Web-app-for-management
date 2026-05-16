@@ -170,8 +170,10 @@ export default function TaskDetail() {
     setSubmitting(true);
     try {
       const response = await api.patch(`/tasks/${task.id}/`, { status: 'in-progress' });
-      setTask((prev) => (prev ? { ...prev, status: response.data.status || 'in-progress' } : prev));
-      setTaskStatus(response.data.status || 'in-progress');
+      const updatedTask = response.data?.task || {};
+      const newStatus = updatedTask.status || 'in-progress';
+      setTask((prev) => (prev ? { ...prev, ...updatedTask, status: newStatus } : prev));
+      setTaskStatus(newStatus);
     } catch (error: any) {
       console.error('Error starting task:', error);
       alert(error?.response?.data?.error || 'ไม่สามารถเริ่มงานได้');
@@ -202,18 +204,22 @@ export default function TaskDetail() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
+      const updatedTask = response.data?.task || {};
+      const newStatus = updatedTask.status || 'completed';
+
       setShowCompletionModal(false);
       setTask((prev) =>
         prev
           ? {
               ...prev,
-              status: response.data.status || 'completed',
-              technician_notes: response.data.technician_notes || notes,
-              materials_used: response.data.materials_used || materialsUsed,
+              ...updatedTask,
+              status: newStatus,
+              technician_notes: updatedTask.technician_notes ?? notes,
+              materials_used: updatedTask.materials_used ?? materialsUsed,
             }
           : prev
       );
-      setTaskStatus(response.data.status || 'completed');
+      setTaskStatus(newStatus);
 
       setTimeout(() => {
         navigate('/technician/tasks');

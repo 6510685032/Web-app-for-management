@@ -76,6 +76,7 @@ export default function TechnicianHome() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [startingTaskId, setStartingTaskId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -91,6 +92,24 @@ export default function TechnicianHome() {
     };
     fetchTasks();
   }, []);
+
+  const handleStartTask = async (e: React.MouseEvent, taskId: number) => {
+    e.stopPropagation();
+    if (startingTaskId !== null) return;
+    setStartingTaskId(taskId);
+    try {
+      const response = await api.patch(`/tasks/${taskId}/`, { status: 'in-progress' });
+      const updatedStatus = response.data?.task?.status || 'in-progress';
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: updatedStatus } : t))
+      );
+    } catch (error: any) {
+      console.error('Error starting task:', error);
+      alert(error?.response?.data?.error || 'ไม่สามารถเริ่มงานได้');
+    } finally {
+      setStartingTaskId(null);
+    }
+  };
 
   const sortedTodayTasks = useMemo(() => {
     const activeTasks = tasks.filter(t => t.status !== 'completed' && t.status !== 'cancelled');
@@ -303,10 +322,12 @@ export default function TechnicianHome() {
                           </div>
                           {task.status === 'assigned' && (
                             <button
-                              className="px-4 py-2 rounded-lg text-white text-xs font-bold uppercase tracking-wider shadow-lg transition-transform active:scale-95"
+                              onClick={(e) => handleStartTask(e, task.id)}
+                              disabled={startingTaskId === task.id}
+                              className="px-4 py-2 rounded-lg text-white text-xs font-bold uppercase tracking-wider shadow-lg transition-transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                               style={{ background: 'var(--accent-gradient)' }}
                             >
-                              Start Task
+                              {startingTaskId === task.id ? 'Starting...' : 'Start Task'}
                             </button>
                           )}
                         </div>
