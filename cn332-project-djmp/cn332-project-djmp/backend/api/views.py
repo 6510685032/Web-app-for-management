@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from datetime import timedelta
 from django.utils.dateparse import parse_date, parse_time, parse_datetime
 
 from rest_framework import status
@@ -31,6 +32,7 @@ REQUEST_STATUSES = {"pending", "assigned", "in-progress", "completed", "cancelle
 TECHNICIAN_ALLOWED_STATUSES = {"assigned", "in-progress", "completed"}
 REQUEST_PRIORITIES = {"low", "medium", "high"}
 APPROVAL_STATUSES = {"pending_approval", "approved", "rejected"}
+EXTENSION_RESPONSE_STATUSES = {"approved", "rejected"}
 
 
 def model_has_field(model_cls, field_name: str) -> bool:
@@ -187,6 +189,13 @@ def serialize_request(req, include_resident=True):
 
     if model_has_field(MaintenanceRequest, "specialty_required"):
         data["specialty_required"] = get_field_value(req, "specialty_required", "") or ""
+
+    if model_has_field(MaintenanceRequest, "extension_status"):
+        data["extension_status"] = get_field_value(req, "extension_status", "none") or "none"
+        data["extension_requested_days"] = get_field_value(req, "extension_requested_days", None)
+        data["extension_reason"] = get_field_value(req, "extension_reason", "") or ""
+        ext_requested_at = get_field_value(req, "extension_requested_at", None)
+        data["extension_requested_at"] = ext_requested_at.isoformat() if ext_requested_at else None
 
     return data
 
@@ -822,23 +831,134 @@ def request_task_extension(request, pk):
     except MaintenanceRequest.DoesNotExist:
         return Response({"error": "Task not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    days = request.data.get("days")
+    days_raw = request.data.get("days")
     reason = (request.data.get("reason") or "").strip()
 
-    if not days or not reason:
+    try:
+        days = int(days_raw)
+    except (TypeError, ValueError):
+        return Response(
+            {"error": "Days must be a valid number"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if days < 1 or days > 30:
+        return Response(
+            {"error": "Days must be between 1 and 30"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not reason:
         return Response(
             {"error": "Days and reason are required"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    current_status = get_field_value(task, "extension_status", "none") or "none"
+    if current_status == "pending":
+        return Response(
+            {"error": "มีคำขอขยายเวลาที่รออนุมัติอยู่แล้ว"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if model_has_field(MaintenanceRequest, "extension_status"):
+        task.extension_status = "pending"
+        task.extension_requested_days = days
+        task.extension_reason = reason
+        task.extension_requested_at = timezone.now()
+        task.save()
+
+    if getattr(task, "resident", None):
+        create_notification(
+            task.resident,
+            "Extension Request",
+            f"ช่างขอขยายเวลาทำงาน {days} วัน สำหรับคำขอ {task.request_code}",
+            "warning",
+        )
+
     return Response(
         {
             "message": "Extension request submitted successfully",
-            "task_id": task.id,
-            "days": days,
-            "reason": reason,
+            "task": serialize_request(task),
         },
         status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def respond_task_extension(request, pk):
+    user_obj = request.user
+
+    try:
+        task = MaintenanceRequest.objects.select_related("resident", "assigned_technician").get(pk=pk)
+    except MaintenanceRequest.DoesNotExist:
+        return Response({"error": "Request not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    user_role = get_user_role(user_obj)
+    if user_role == "resident":
+        if task.resident_id != user_obj.id:
+            return Response(
+                {"error": "You do not have permission to respond to this extension"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+    elif user_role not in {"officer", "admin"}:
+        return Response(
+            {"error": "You do not have permission to respond to this extension"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    if not model_has_field(MaintenanceRequest, "extension_status"):
+        return Response(
+            {"error": "Extension feature is not available"},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
+
+    if (getattr(task, "extension_status", "none") or "none") != "pending":
+        return Response(
+            {"error": "ไม่มีคำขอขยายเวลาที่รออนุมัติ"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    decision = (request.data.get("decision") or "").strip().lower()
+    if decision not in EXTENSION_RESPONSE_STATUSES:
+        return Response(
+            {"error": "Invalid decision. Must be 'approved' or 'rejected'"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    requested_days = getattr(task, "extension_requested_days", 0) or 0
+
+    if decision == "approved":
+        task.extension_status = "approved"
+        if model_has_field(MaintenanceRequest, "deadline") and requested_days > 0:
+            base_deadline = getattr(task, "deadline", None) or timezone.now()
+            task.deadline = base_deadline + timedelta(days=requested_days)
+
+        if task.assigned_technician:
+            create_notification(
+                task.assigned_technician,
+                "Extension Approved",
+                f"คำขอขยายเวลา {requested_days} วัน สำหรับ {task.request_code} ได้รับการอนุมัติ",
+                "success",
+            )
+    else:
+        task.extension_status = "rejected"
+        if task.assigned_technician:
+            create_notification(
+                task.assigned_technician,
+                "Extension Rejected",
+                f"คำขอขยายเวลา {requested_days} วัน สำหรับ {task.request_code} ไม่ได้รับการอนุมัติ",
+                "error",
+            )
+
+    task.save()
+
+    return Response(
+        {
+            "message": "Extension response recorded successfully",
+            "request": serialize_request(task),
+        }
     )
 
 

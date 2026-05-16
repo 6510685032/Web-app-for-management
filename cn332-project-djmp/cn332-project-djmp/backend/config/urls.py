@@ -31,6 +31,7 @@ urlpatterns = [
     path("api/tasks/my/", views.my_tasks, name="my_tasks"),
     path("api/tasks/<int:pk>/", views.task_detail, name="task_detail"),
     path("api/tasks/<int:pk>/request-extension/", views.request_task_extension, name="request_task_extension"),
+    path("api/maintenance-requests/<int:pk>/respond-extension/", views.respond_task_extension, name="respond_task_extension"),
 
     # =========================
     # Announcements

@@ -4,6 +4,16 @@ import { ArrowLeft, Users, MapPin, Calendar, Wrench } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
 
+function formatScheduledDate(value?: string | null, opts?: Intl.DateTimeFormatOptions): string {
+  if (!value) return '-';
+  const [datePart] = value.split('T');
+  const parts = datePart.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return value;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-US', opts || { month: 'short', day: 'numeric' });
+}
+
 interface TaskInfo {
   id: number;
   request_code: string;
@@ -150,7 +160,7 @@ export default function TechnicianSchedule() {
                             {task.scheduled_date ? (
                               <span className="flex items-center gap-1 text-blue-600 text-sm">
                                 <Calendar className="w-4 h-4" />
-                                {new Date(task.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                {formatScheduledDate(task.scheduled_date)}
                               </span>
                             ) : (
                               <span className="text-blue-400 text-sm">-</span>

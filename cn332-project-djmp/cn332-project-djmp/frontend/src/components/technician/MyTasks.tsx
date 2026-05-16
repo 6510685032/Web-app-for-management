@@ -4,6 +4,22 @@ import { ArrowLeft, Search, Filter, Calendar, Timer, MapPin, ChevronRight, Clipb
 import StatusBadge, { Status } from '../shared/StatusBadge';
 import api from '../../utils/api';
 
+function formatScheduledDate(value?: string | null, opts?: Intl.DateTimeFormatOptions): string {
+  if (!value) return '-';
+  const [datePart] = value.split('T');
+  const parts = datePart.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return value;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-US', opts || { month: 'short', day: 'numeric' });
+}
+
+function formatScheduledTime(value?: string | null): string {
+  if (!value) return '-';
+  const match = value.match(/^(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
+}
+
 interface TaskItem {
   id: string | number;
   request_code?: string;
@@ -258,13 +274,9 @@ export default function MyTasks() {
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold" style={{ color: 'var(--djmp-text-muted)' }}>
                       <Calendar className="w-3.5 h-3.5" />
-                      <span>
-                        {task.scheduled_date
-                          ? new Date(task.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                          : '-'}
-                      </span>
+                      <span>{formatScheduledDate(task.scheduled_date)}</span>
                       <span className="opacity-30">•</span>
-                      <span>{task.scheduled_time || '-'}</span>
+                      <span>{formatScheduledTime(task.scheduled_time)}</span>
                     </div>
                     {task.location && (
                        <div className="flex items-center gap-2 text-xs font-bold" style={{ color: 'var(--djmp-text-muted)' }}>

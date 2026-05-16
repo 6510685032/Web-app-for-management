@@ -39,6 +39,26 @@ interface TaskDetailData {
   images?: string[];
   technician_notes?: string;
   materials_used?: string;
+  extension_status?: 'none' | 'pending' | 'approved' | 'rejected' | string;
+  extension_requested_days?: number | null;
+  extension_reason?: string;
+  extension_requested_at?: string | null;
+}
+
+function formatScheduledDate(value?: string | null): string {
+  if (!value) return '-';
+  const [datePart] = value.split('T');
+  const parts = datePart.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return value;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function formatScheduledTime(value?: string | null): string {
+  if (!value) return '-';
+  const match = value.match(/^(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
 }
 
 function DeadlineTimer({ deadline }: { deadline: string }) {
@@ -239,14 +259,23 @@ export default function TaskDetail() {
       return;
     }
 
+    const daysNum = parseInt(extensionDays, 10);
+    if (isNaN(daysNum) || daysNum < 1) {
+      alert('Please enter a valid number of days');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await api.post(`/tasks/${task.id}/request-extension/`, {
-        days: extensionDays,
+      const response = await api.post(`/tasks/${task.id}/request-extension/`, {
+        days: daysNum,
         reason: extensionReason,
       });
+      const updatedTask = response.data?.task || {};
+      setTask((prev) => (prev ? { ...prev, ...updatedTask } : prev));
       setShowExtensionModal(false);
-      alert('Extension request submitted successfully');
+      setExtensionReason('');
+      alert('ส่งคำขอขยายเวลาเรียบร้อยแล้ว รอผู้พักอาศัยอนุมัติ');
     } catch (error: any) {
       console.error('Error requesting extension:', error);
       alert(error?.response?.data?.error || 'ไม่สามารถส่งคำขอขยายเวลาได้');
@@ -314,13 +343,11 @@ export default function TaskDetail() {
                  <div className="flex flex-wrap gap-4 text-xs font-bold text-white/80 uppercase tracking-widest">
                     <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md">
                       <Calendar className="w-3.5 h-3.5" />
-                      {task.scheduled_date
-                        ? new Date(task.scheduled_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                        : '-'}
+                      {formatScheduledDate(task.scheduled_date)}
                     </div>
                     <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg backdrop-blur-md">
                       <Clock className="w-3.5 h-3.5" />
-                      {task.scheduled_time || '-'}
+                      {formatScheduledTime(task.scheduled_time)}
                     </div>
                  </div>
               </div>
@@ -523,15 +550,40 @@ export default function TaskDetail() {
                     <CheckCircle2 className="w-5 h-5" />
                     Confirm Resolution
                   </button>
-                  <button
-                    onClick={() => setShowExtensionModal(true)}
-                    disabled={submitting}
-                    className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
-                    style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
-                  >
-                    <Timer className="w-5 h-5" />
-                    Request Extension
-                  </button>
+
+                  {task.extension_status === 'pending' ? (
+                    <div className="w-full py-4 px-4 rounded-2xl flex items-center justify-center gap-3 text-center" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                      <Timer className="w-5 h-5 text-amber-400 animate-pulse" />
+                      <div className="text-left">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">รออนุมัติขยายเวลา</p>
+                        <p className="text-[10px] font-bold text-amber-300/80">ขอเพิ่ม {task.extension_requested_days} วัน</p>
+                      </div>
+                    </div>
+                  ) : task.extension_status === 'approved' ? (
+                    <div className="w-full py-4 px-4 rounded-2xl flex items-center justify-center gap-3 text-center" style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                      <div className="text-left">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">อนุมัติขยายเวลาแล้ว</p>
+                        <p className="text-[10px] font-bold text-emerald-300/80">+{task.extension_requested_days} วัน</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowExtensionModal(true)}
+                      disabled={submitting}
+                      className="w-full py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
+                      style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                    >
+                      <Timer className="w-5 h-5" />
+                      {task.extension_status === 'rejected' ? 'Resubmit Extension' : 'Request Extension'}
+                    </button>
+                  )}
+
+                  {task.extension_status === 'rejected' && (
+                    <div className="w-full py-3 px-4 rounded-2xl text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-red-400">คำขอที่แล้วไม่ได้รับการอนุมัติ</p>
+                    </div>
+                  )}
                 </div>
               )}
 

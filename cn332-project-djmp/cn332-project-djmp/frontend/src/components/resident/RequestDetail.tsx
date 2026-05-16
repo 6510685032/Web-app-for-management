@@ -8,9 +8,29 @@ import {
   MapPin,
   Clock,
   Image as ImageIcon,
+  Timer,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
+
+function formatScheduledDate(value?: string | null, opts?: Intl.DateTimeFormatOptions): string {
+  if (!value) return '-';
+  const [datePart] = value.split('T');
+  const parts = datePart.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return value;
+  const [year, month, day] = parts;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString('en-US', opts || { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatScheduledTime(value?: string | null): string {
+  if (!value) return '-';
+  const match = value.match(/^(\d{2}):(\d{2})/);
+  return match ? `${match[1]}:${match[2]}` : value;
+}
 
 interface TechnicianInfo {
   name: string;
@@ -34,6 +54,10 @@ interface RequestDetailData {
   technician_phone?: string;
   technician_email?: string;
   images?: string[];
+  extension_status?: 'none' | 'pending' | 'approved' | 'rejected' | string;
+  extension_requested_days?: number | null;
+  extension_reason?: string;
+  extension_requested_at?: string | null;
 }
 
 export default function RequestDetail() {
@@ -43,6 +67,7 @@ export default function RequestDetail() {
   const [request, setRequest] = useState<RequestDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [extensionSubmitting, setExtensionSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchRequestDetail = async () => {
@@ -70,6 +95,48 @@ export default function RequestDetail() {
 
     fetchRequestDetail();
   }, [id]);
+
+  const handleExtensionResponse = async (decision: 'approved' | 'rejected') => {
+    if (!request) return;
+
+    const confirmMessage =
+      decision === 'approved'
+        ? `ต้องการอนุมัติให้ช่างขยายเวลาเพิ่ม ${request.extension_requested_days} วันใช่หรือไม่?`
+        : `ต้องการปฏิเสธคำขอขยายเวลา ${request.extension_requested_days} วันใช่หรือไม่?`;
+
+    if (!window.confirm(confirmMessage)) return;
+
+    setExtensionSubmitting(true);
+    try {
+      const response = await api.post(
+        `/maintenance-requests/${request.id}/respond-extension/`,
+        { decision }
+      );
+      const updatedRequest = response.data?.request || {};
+      setRequest((prev) => (prev ? { ...prev, ...updatedRequest } : prev));
+      alert(decision === 'approved' ? 'อนุมัติคำขอขยายเวลาเรียบร้อย' : 'ปฏิเสธคำขอขยายเวลาเรียบร้อย');
+    } catch (error: any) {
+      console.error('Error responding to extension:', error);
+      alert(error?.response?.data?.error || 'ไม่สามารถบันทึกการตอบกลับได้');
+    } finally {
+      setExtensionSubmitting(false);
+    }
+  };
+
+  const extensionRequestedAtLabel = useMemo(() => {
+    if (!request?.extension_requested_at) return null;
+    try {
+      return new Date(request.extension_requested_at).toLocaleString('th-TH', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch {
+      return null;
+    }
+  }, [request?.extension_requested_at]);
 
   const technicianInfo: TechnicianInfo | null = useMemo(() => {
     if (!request?.technician || request.technician === '-') return null;
@@ -194,13 +261,13 @@ export default function RequestDetail() {
                   <div>
                     <p className="text-sm mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Scheduled Date</p>
                     <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
-                      {request.scheduled_date
-                        ? new Date(request.scheduled_date).toLocaleDateString(
-                            'en-US',
-                            { month: 'short', day: 'numeric', year: 'numeric' }
-                          )
-                        : '-'}
+                      {formatScheduledDate(request.scheduled_date)}
                     </p>
+                    {request.scheduled_time && (
+                      <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>
+                        {formatScheduledTime(request.scheduled_time)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -279,6 +346,106 @@ export default function RequestDetail() {
               )}
             </div>
 
+            {request.extension_status === 'pending' && (
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.35)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-500" />
+                  <h3 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
+                    คำขอขยายเวลาจากช่าง
+                  </h3>
+                </div>
+
+                <div className="p-4 rounded-lg border mb-3" style={{ background: 'var(--djmp-surface)', borderColor: 'var(--djmp-border)' }}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245, 158, 11, 0.15)' }}>
+                      <Timer className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs" style={{ color: 'var(--djmp-text-muted)' }}>ช่างขอขยายเวลาเพิ่ม</p>
+                      <p className="text-2xl font-bold text-amber-500">
+                        {request.extension_requested_days ?? '-'} วัน
+                      </p>
+                    </div>
+                  </div>
+
+                  {request.extension_reason && (
+                    <div className="pt-3 border-t" style={{ borderColor: 'var(--djmp-border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>
+                        เหตุผล
+                      </p>
+                      <p className="text-sm" style={{ color: 'var(--djmp-text)' }}>
+                        {request.extension_reason}
+                      </p>
+                    </div>
+                  )}
+
+                  {extensionRequestedAtLabel && (
+                    <p className="text-xs mt-2" style={{ color: 'var(--djmp-text-muted)' }}>
+                      ยื่นคำขอเมื่อ {extensionRequestedAtLabel}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleExtensionResponse('approved')}
+                    disabled={extensionSubmitting}
+                    className="py-3 rounded-lg font-semibold text-sm text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    อนุมัติ
+                  </button>
+                  <button
+                    onClick={() => handleExtensionResponse('rejected')}
+                    disabled={extensionSubmitting}
+                    className="py-3 rounded-lg font-semibold text-sm text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    ปฏิเสธ
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {request.extension_status === 'approved' && (
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  <h3 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
+                    อนุมัติขยายเวลาแล้ว
+                  </h3>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
+                  คุณได้อนุมัติให้ช่างขยายเวลาเพิ่ม{' '}
+                  <span className="font-semibold text-emerald-500">
+                    {request.extension_requested_days} วัน
+                  </span>
+                </p>
+                {request.extension_reason && (
+                  <div className="mt-3 p-3 rounded-lg border" style={{ background: 'var(--djmp-surface)', borderColor: 'var(--djmp-border)' }}>
+                    <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>เหตุผล</p>
+                    <p className="text-sm" style={{ color: 'var(--djmp-text)' }}>{request.extension_reason}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {request.extension_status === 'rejected' && (
+              <div className="rounded-lg p-6 border" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
+                    ปฏิเสธคำขอขยายเวลา
+                  </h3>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--djmp-text-muted)' }}>
+                  คุณได้ปฏิเสธคำขอขยายเวลา {request.extension_requested_days} วันจากช่าง
+                </p>
+              </div>
+            )}
+
             {request.status === 'in-progress' && (
               <div className="rounded-lg p-6 border" style={{ background: 'rgba(34, 197, 94, 0.1)', borderColor: 'rgba(34, 197, 94, 0.2)' }}>
                 <h3 className="font-semibold mb-2" style={{ color: 'var(--djmp-text)' }}>
@@ -294,7 +461,7 @@ export default function RequestDetail() {
                     Scheduled Time
                   </p>
                   <p className="font-medium" style={{ color: 'var(--djmp-text)' }}>
-                    {request.scheduled_time || '-'}
+                    {formatScheduledTime(request.scheduled_time)}
                   </p>
                 </div>
               </div>

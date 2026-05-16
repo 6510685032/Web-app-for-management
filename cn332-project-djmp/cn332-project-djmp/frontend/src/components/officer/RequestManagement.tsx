@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, CheckCircle, X, UserCheck, Eye, Clock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Filter, CheckCircle, X, UserCheck, Eye, Clock, AlertTriangle, Calendar } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
 
@@ -18,6 +18,8 @@ interface RequestItem {
   technician: string;
   technician_id: number | null;
   deadline: string | null;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
   approved_completion: string;
   technician_notes?: string;
   materials_used?: string;
@@ -36,6 +38,8 @@ export default function RequestManagement() {
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(null);
   const [newPriority, setNewPriority] = useState('');
   const [newDeadline, setNewDeadline] = useState('');
+  const [newScheduledDate, setNewScheduledDate] = useState('');
+  const [newScheduledTime, setNewScheduledTime] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
@@ -99,7 +103,19 @@ export default function RequestManagement() {
     setSelectedRequest(req);
     setNewPriority(req.priority);
     setNewDeadline(req.deadline ? req.deadline.split('T')[0] : '');
+    setNewScheduledDate(req.scheduled_date || '');
+    setNewScheduledTime(req.scheduled_time ? req.scheduled_time.substring(0, 5) : '');
     setShowDetailModal(true);
+  };
+
+  const handleDeadlineChange = (value: string) => {
+    setNewDeadline(value);
+    if (value) {
+      setNewScheduledDate(value);
+      if (!newScheduledTime) {
+        setNewScheduledTime('09:00');
+      }
+    }
   };
 
   const getPriorityColor = (priority: string) => {
@@ -392,11 +408,46 @@ export default function RequestManagement() {
                     <input
                       type="date"
                       value={newDeadline}
-                      onChange={(e) => setNewDeadline(e.target.value)}
+                      onChange={(e) => handleDeadlineChange(e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full px-4 py-2 rounded-lg focus:outline-none transition-colors"
                       style={{ background: 'var(--djmp-input-bg)', border: '1px solid var(--djmp-input-border)', color: 'var(--djmp-text)' }}
                     />
+                    <p className="text-xs mt-1" style={{ color: 'var(--djmp-text-muted)' }}>
+                      กำหนดส่งงาน — เปลี่ยนค่านี้จะ sync วันนัดทำงานและเวลา (09:00) ให้อัตโนมัติ
+                    </p>
+                  </div>
+
+                  {/* Scheduled Date & Time */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--djmp-text)' }}>
+                        <Calendar className="w-4 h-4 inline mr-1" />
+                        Scheduled Date
+                      </label>
+                      <input
+                        type="date"
+                        value={newScheduledDate}
+                        onChange={(e) => setNewScheduledDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        max={newDeadline || undefined}
+                        className="w-full px-4 py-2 rounded-lg focus:outline-none transition-colors"
+                        style={{ background: 'var(--djmp-input-bg)', border: '1px solid var(--djmp-input-border)', color: 'var(--djmp-text)' }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--djmp-text)' }}>
+                        <Clock className="w-4 h-4 inline mr-1" />
+                        Scheduled Time
+                      </label>
+                      <input
+                        type="time"
+                        value={newScheduledTime}
+                        onChange={(e) => setNewScheduledTime(e.target.value)}
+                        className="w-full px-4 py-2 rounded-lg focus:outline-none transition-colors"
+                        style={{ background: 'var(--djmp-input-bg)', border: '1px solid var(--djmp-input-border)', color: 'var(--djmp-text)' }}
+                      />
+                    </div>
                   </div>
                 </>
               )}
@@ -430,7 +481,24 @@ export default function RequestManagement() {
                     onClick={() => {
                       const updates: Record<string, any> = {};
                       if (newPriority !== selectedRequest.priority) updates.priority = newPriority;
-                      if (newDeadline) updates.deadline = `${newDeadline}T23:59:59`;
+
+                      const originalDeadlineDate = selectedRequest.deadline ? selectedRequest.deadline.split('T')[0] : '';
+                      if (newDeadline !== originalDeadlineDate) {
+                        updates.deadline = newDeadline ? `${newDeadline}T23:59:59` : '';
+                      }
+
+                      const originalScheduledDate = selectedRequest.scheduled_date || '';
+                      if (newScheduledDate !== originalScheduledDate) {
+                        updates.scheduled_date = newScheduledDate;
+                      }
+
+                      const originalScheduledTime = selectedRequest.scheduled_time
+                        ? selectedRequest.scheduled_time.substring(0, 5)
+                        : '';
+                      if (newScheduledTime !== originalScheduledTime) {
+                        updates.scheduled_time = newScheduledTime;
+                      }
+
                       if (Object.keys(updates).length > 0) {
                         handleManageRequest(selectedRequest.id, updates);
                       } else {

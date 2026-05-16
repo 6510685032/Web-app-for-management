@@ -121,6 +121,13 @@ class MaintenanceRequest(models.Model):
         ('rejected', 'ไม่อนุมัติเสร็จงาน'),
     )
 
+    EXTENSION_STATUS_CHOICES = (
+        ('none', 'ไม่มีคำขอขยายเวลา'),
+        ('pending', 'รอการอนุมัติขยายเวลา'),
+        ('approved', 'อนุมัติขยายเวลาแล้ว'),
+        ('rejected', 'ไม่อนุมัติขยายเวลา'),
+    )
+
     resident = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -204,6 +211,32 @@ class MaintenanceRequest(models.Model):
     scheduled_time = models.TimeField(
         blank=True,
         null=True
+    )
+
+    extension_status = models.CharField(
+        max_length=20,
+        choices=EXTENSION_STATUS_CHOICES,
+        default='none',
+        blank=True,
+        help_text="สถานะคำขอขยายเวลาจากช่าง"
+    )
+
+    extension_requested_days = models.IntegerField(
+        blank=True,
+        null=True,
+        help_text="จำนวนวันที่ช่างขอขยายเวลา"
+    )
+
+    extension_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text="เหตุผลในการขอขยายเวลา"
+    )
+
+    extension_requested_at = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="เวลาที่ช่างยื่นคำขอขยายเวลา"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
