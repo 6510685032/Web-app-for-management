@@ -1,4 +1,4 @@
-# <center>Conceptual Design : ระบบบริหารจัดการวางแผนงานนิติบุคคลบ้านจัดสรรค์</center>
+# <center>JurisiticPro : ระบบบริหารจัดการวางแผนงานนิติบุคคลบ้านจัดสรรค์</center>
 
 # 1. ภาพรวมของระบบ (Overview)
 ระบบนี้เป็นแพลตฟอร์มที่จะช่วยในการบริหารจัดการนิติบุคคล (Digital Juristic Platform) โดยจะเข้ามาเชื่อมโยงการทำงานระหว่าง นิติบุคคล (Management), ลูกบ้าน (Residents) และ เจ้าหน้าที่หน้างาน (Staff) เข้าด้วยกัน เพื่อเพิ่มประสิทธิภาพในการจัดการงานซ่อมบำรุง, การสื่อสารภายในโครงการ, และการวิเคราะห์ข้อมูลเชิงบริหารผ่านแดชบอร์ดอัจฉริยะ
@@ -61,6 +61,7 @@
 |Backend (API & Logic)|Node.js (Express), Django, Python|
 |Database |PostgreSQL, (สำหรับเก็บข้อมูลคิวและประวัติการซ่อม)|
 |Cloud Storage | MinIO S3|
+|Containerization | Docker + Docker compose CLI|
 
 # 6. แผนผังการทำงาน (Workflow Diagram)
 graph LR;
@@ -87,30 +88,30 @@ https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 - ครั้งที่ 1: 2 ก.พ. 2569
 - ครั้งที่ 2: 20 เม.ย. 2569
 
-## Deployment Guide
-Make sure you are inside the docker directory:
+# 10. วิธีการ Deploy (โดยใช้ docker compose)
+ตรวจสอบให้แน่ใจว่าคุณอยู่ในไดเร็กทอรี docker แล้ว:
 ```
 cd docker
 ```
 
-Build images and run the containers:
+Build images และ รันตัว docker:
 ```
 docker compose up --build (if you don't want to build the images again, just run: docker compose up)
 ```
 
-To stop the containers:
+ถ้าอยากจะปิดให้รันคำสั่ง:
 ```
 docker compose down (if you want to remove the volumes, then do run: docker compose down -v)
 ```
 
-** You will have to execute workflow to populate test users manually using n8n WebUI site (listed below), enter the default credentials given inside docker/n8n/README.md and then proceed to execute workflow there.
+** จำเป็นต้อง execute workflow เพื่อเพิ่ม test user ด้วยตนเองโดยใช้เว็บไซต์ n8n WebUI (ตามรายการด้านล่าง) ป้อน default user+pass ที่ให้ไว้ใน docker/n8n/README.md จากนั้นก็ไป execute workflow ต่อที่นั่น
 
-Default ports:
+พอร์ตของ Stack:
 ```
-http://localhost:8000/ (django rest)
+http://localhost:8000/ (Django)
 http://localhost:5678/ (n8n)
-http://localhost:5173/ (vite)
-http://localhost:5432/ (postgres)
-http://localhost:9000/ (minio S3 API)
-http://localhost:9001/ (minio console - login: minioadmin/minioadmin)
+http://localhost:5173/ (Vite)
+http://localhost:5432/ (Postgres)
+http://localhost:9000/ (Minio S3 API)
+http://localhost:9001/ (Minio console - login: minioadmin/minioadmin)
 ```
