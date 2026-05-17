@@ -40,14 +40,14 @@ def api_get(path):
         r.raise_for_status()
         return r.json()
     except requests.exceptions.ConnectionError:
-        console.print("[bold red]❌ ไม่สามารถเชื่อมต่อ Backend ได้ ตรวจสอบว่า Django server รันอยู่[/bold red]")
+        err_msg("ไม่สามารถเชื่อมต่อ Backend ได้ ตรวจสอบว่า Django server รันอยู่")
         return None
     except requests.exceptions.HTTPError as e:
         try:
             msg = e.response.json().get("error") or e.response.json().get("message") or str(e)
         except Exception:
             msg = str(e)
-        console.print(f"[bold red]❌ {msg}[/bold red]")
+        err_msg(f"{msg}")
         return None
 
 
@@ -57,14 +57,14 @@ def api_post(path, data=None):
         r.raise_for_status()
         return r.json()
     except requests.exceptions.ConnectionError:
-        console.print("[bold red]❌ ไม่สามารถเชื่อมต่อ Backend ได้[/bold red]")
+        err_msg("ไม่สามารถเชื่อมต่อ Backend ได้")
         return None
     except requests.exceptions.HTTPError as e:
         try:
             msg = e.response.json().get("error") or e.response.json().get("message") or str(e)
         except Exception:
             msg = str(e)
-        console.print(f"[bold red]❌ {msg}[/bold red]")
+        err_msg(f"{msg}")
         return None
 
 
@@ -74,14 +74,14 @@ def api_patch(path, data):
         r.raise_for_status()
         return r.json()
     except requests.exceptions.ConnectionError:
-        console.print("[bold red]❌ ไม่สามารถเชื่อมต่อ Backend ได้[/bold red]")
+        err_msg("ไม่สามารถเชื่อมต่อ Backend ได้")
         return None
     except requests.exceptions.HTTPError as e:
         try:
             msg = e.response.json().get("error") or e.response.json().get("message") or str(e)
         except Exception:
             msg = str(e)
-        console.print(f"[bold red]❌ {msg}[/bold red]")
+        err_msg(f"{msg}")
         return None
 
 
@@ -95,7 +95,7 @@ def api_put(path, data):
             msg = e.response.json().get("error") or e.response.json().get("message") or str(e)
         except Exception:
             msg = str(e)
-        console.print(f"[bold red]❌ {msg}[/bold red]")
+        err_msg(f"{msg}")
         return None
 
 
@@ -109,7 +109,7 @@ def api_delete(path):
             msg = e.response.json().get("error") or str(e)
         except Exception:
             msg = str(e)
-        console.print(f"[bold red]❌ {msg}[/bold red]")
+        err_msg(f"{msg}")
         return None
 
 
@@ -118,41 +118,182 @@ def clear():
 
 
 def pause():
-    Prompt.ask("\n[dim]กด Enter เพื่อกลับเมนู[/dim]")
+    console.print()
+    console.rule("[dim]━[/dim]", style="dim white")
+    Prompt.ask("[dim]  ↵  กด Enter เพื่อกลับ[/dim]")
+
+
+def show_request_selector(data, title="รายการคำขอ"):
+    if not data:
+        info("ไม่มีรายการ")
+        return
+
+    table = Table(
+        title=title,
+        box=box.SIMPLE_HEAD,
+        border_style="bright_black",
+        header_style="bold bright_white",
+        show_lines=False,
+    )
+
+    table.add_column("ID", style="bold bright_cyan", width=5)
+    table.add_column("Code", width=12)
+    table.add_column("หมวด", width=14)
+    table.add_column("สถานที่", width=14)
+    table.add_column("Priority", width=10)
+    table.add_column("Status", width=14)
+
+    for r in data:
+        table.add_row(
+            str(r.get("id", "")),
+            r.get("request_code", ""),
+            r.get("category", ""),
+            r.get("location", ""),
+            priority_text(r.get("priority", "")),
+            status_text(r.get("status", "")),
+        )
+
+    console.print(table)
+    console.print()
+
+
+def show_task_selector(data, title="รายการงาน"):
+    if not data:
+        info("ไม่มีงาน")
+        return
+
+    table = Table(
+        title=title,
+        box=box.SIMPLE_HEAD,
+        border_style="bright_black",
+        header_style="bold bright_white",
+        show_lines=False,
+    )
+
+    table.add_column("ID", style="bold bright_cyan", width=5)
+    table.add_column("Code", width=12)
+    table.add_column("หมวด", width=14)
+    table.add_column("สถานที่", width=14)
+    table.add_column("Priority", width=10)
+    table.add_column("Status", width=14)
+
+    for t in data:
+        table.add_row(
+            str(t.get("id", "")),
+            t.get("request_code", ""),
+            t.get("category", ""),
+            t.get("location", ""),
+            priority_text(t.get("priority", "")),
+            status_text(t.get("status", "")),
+        )
+
+    console.print(table)
+    console.print()
+
+
+# ── Theme ────────────────────────────────────────────
+ROLE_COLOR  = {"admin": "bright_red", "officer": "yellow", "technician": "bright_cyan", "resident": "bright_green"}
+ROLE_ICON   = {"admin": "⬡", "officer": "◈", "technician": "⚙", "resident": "⌂"}
+STATUS_CFG  = {
+    "pending":          ("◌", "yellow"),
+    "assigned":         ("◎", "bright_blue"),
+    "in-progress":      ("◉", "bright_cyan"),
+    "completed":        ("●", "bright_green"),
+    "cancelled":        ("○", "bright_black"),
+    "pending_approval": ("◈", "bright_magenta"),
+    "approved":         ("✦", "bright_green"),
+    "rejected":         ("✕", "bright_red"),
+}
+PRIORITY_CFG = {
+    "high":   ("▲", "bright_red"),
+    "medium": ("■", "yellow"),
+    "low":    ("▽", "bright_black"),
+}
+
+ASCII_LOGO = """\
+  [bold bright_cyan]██╗███╗   ███╗███████╗[/bold bright_cyan]
+  [bold bright_cyan]██║████╗ ████║██╔════╝[/bold bright_cyan]
+  [bold bright_cyan]██║██╔████╔██║███████╗[/bold bright_cyan]
+  [bold bright_cyan]██║██║╚██╔╝██║╚════██║[/bold bright_cyan]
+  [bold bright_cyan]██║██║ ╚═╝ ██║███████║[/bold bright_cyan]
+  [bold bright_cyan]╚═╝╚═╝     ╚═╝╚══════╝[/bold bright_cyan]"""
+
+SUBTITLE = "  [dim white]Juristic Management System  ·  CLI v2[/dim white]"
+DIVIDER  = "  [dim white]" + "─" * 42 + "[/dim white]"
 
 
 def show_banner():
-    console.print(Panel(
-        "[bold cyan]🏠  ระบบบริหารจัดการนิติบุคคลบ้านจัดสรร[/bold cyan]\n"
-        "[dim]    Juristic Management System CLI[/dim]",
-        border_style="cyan", padding=(0, 4)
-    ))
+    console.print()
+    console.print(ASCII_LOGO)
+    console.print(SUBTITLE)
+    console.print(DIVIDER)
+    console.print()
 
 
 def show_user_bar():
-    u = SESSION.get("user", {})
-    role_color = {"admin": "red", "officer": "yellow", "technician": "cyan", "resident": "green"}
+    u    = SESSION.get("user", {})
     role = SESSION.get("role", "")
-    color = role_color.get(role, "white")
+    col  = ROLE_COLOR.get(role, "white")
+    icon = ROLE_ICON.get(role, "•")
+    name = u.get("name", SESSION.get("username", ""))
+    unit = u.get("unit_number") or "—"
     console.print(
-        f"[dim]เข้าสู่ระบบ: [bold {color}]{u.get('name', SESSION['username'])}[/bold {color}]"
-        f" | role: [{color}]{role}[/{color}]"
-        f" | unit: {u.get('unit_number', '-')}[/dim]\n"
+        f"  [{col}]{icon}[/{col}]  "
+        f"[bold {col}]{name}[/bold {col}]"
+        f"  [dim white]·[/dim white]  [{col}]{role.upper()}[/{col}]"
+        f"  [dim white]·  unit {unit}[/dim white]"
     )
+    console.print(DIVIDER + "\n")
+
+
+def section(title: str, icon: str = ""):
+    label = f"{icon}  {title}" if icon else title
+    console.print(f"  [bold bright_white]{label}[/bold bright_white]")
+    console.print("  [dim]" + "─" * (len(title) + 6) + "[/dim]\n")
+
+
+def ok(msg: str):
+    console.print(f"\n  [bold bright_green]✔[/bold bright_green]  [bright_white]{msg}[/bright_white]")
+
+
+def err_msg(msg: str):
+    console.print(f"\n  [bold bright_red]✘[/bold bright_red]  [bright_white]{msg}[/bright_white]")
+
+
+def info(msg: str):
+    console.print(f"  [dim white]{msg}[/dim white]")
 
 
 def status_text(s):
-    colors = {
-        "pending": "yellow", "assigned": "blue", "in-progress": "cyan",
-        "completed": "green", "cancelled": "dim",
-        "pending_approval": "magenta", "approved": "bold green", "rejected": "bold red",
+    styles = {
+        "pending": "black on yellow",
+        "assigned": "white on blue",
+        "in-progress": "black on cyan",
+        "completed": "white on green",
+        "cancelled": "white on bright_black",
+        "pending_approval": "white on magenta",
+        "approved": "white on green",
+        "rejected": "white on red",
     }
-    return Text(s, style=colors.get(s, "white"))
 
+    return Text(f" {s.upper()} ", style=styles.get(s, "white"))
 
 def priority_text(p):
-    colors = {"high": "bold red", "medium": "yellow", "low": "dim white"}
-    return Text(p, style=colors.get(p, "white"))
+    icon, color = PRIORITY_CFG.get(p, ("·", "white"))
+    return Text(f"{icon} {p}", style=color)
+
+
+def make_table(*cols, border="bright_black") -> Table:
+    t = Table(
+        box=box.SIMPLE_HEAD,
+        border_style=border,
+        header_style="bold bright_white",
+        show_lines=False,
+        pad_edge=True,
+    )
+    for name, kwargs in cols:
+        t.add_column(name, **kwargs)
+    return t
 
 
 # ══════════════════════════════════════════════
@@ -162,12 +303,13 @@ def priority_text(p):
 def do_login():
     clear()
     show_banner()
-    console.print(Panel("[bold yellow]🔐 เข้าสู่ระบบ[/bold yellow]", border_style="yellow"))
+    console.print("  [bold bright_white]SIGN IN[/bold bright_white]")
+    console.print(DIVIDER + "\n")
 
-    identifier = Prompt.ask("  Username หรือ Email")
-    password = Prompt.ask("  Password", password=True)
+    identifier = Prompt.ask("  [bright_white]Username / Email[/bright_white]")
+    password   = Prompt.ask("  [bright_white]Password       [/bright_white]", password=True)
 
-    with console.status("[cyan]กำลังเข้าสู่ระบบ...[/cyan]"):
+    with console.status("  [bright_cyan]กำลังตรวจสอบ...[/bright_cyan]"):
         result = api_post("/login/", {"username": identifier, "password": password})
 
     if result and result.get("access"):
@@ -176,11 +318,16 @@ def do_login():
         SESSION["username"] = user.get("username", identifier)
         SESSION["role"] = user.get("role", "resident")
         SESSION["user"] = user
-        console.print(f"\n[bold green]✅ ยินดีต้อนรับ {user.get('name', identifier)} ({SESSION['role']})[/bold green]")
+        role = SESSION["role"]
+        col  = ROLE_COLOR.get(role, "white")
+        icon = ROLE_ICON.get(role, "•")
+        console.print()
+        console.print(f"  [{col}]{icon}[/{col}]  [bold {col}]ยินดีต้อนรับ {user.get('name', identifier)}[/bold {col}]  [dim white]({role})[/dim white]")
         time.sleep(1)
         return True
 
-    console.print("\n[bold red]❌ Username/Email หรือ Password ไม่ถูกต้อง[/bold red]")
+    console.print()
+    console.print("  [bold bright_red]✘[/bold bright_red]  [bright_white]Username/Email หรือ Password ไม่ถูกต้อง[/bright_white]")
     time.sleep(1.5)
     return False
 
@@ -192,17 +339,17 @@ def do_login():
 # GET /api/announcements/
 def show_announcements():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📢 ประกาศ/ข่าวสาร[/bold cyan]\n")
+    section("ประกาศ/ข่าวสาร", "📢")
 
     data = api_get("/announcements/")
     if data is None:
         pause(); return
 
     if not data:
-        console.print("[dim]ไม่มีประกาศ[/dim]")
+        info("ไม่มีประกาศ")
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="cyan", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID", style="dim", width=5)
     table.add_column("หัวข้อ", min_width=24)
     table.add_column("ประเภท", width=10)
@@ -223,7 +370,7 @@ def show_announcements():
 # GET/PATCH /api/me/
 def show_my_profile():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]👤 โปรไฟล์ของฉัน[/bold cyan]\n")
+    section("โปรไฟล์ของฉัน", "👤")
 
     data = api_get("/me/")
     if not data:
@@ -239,7 +386,7 @@ def show_my_profile():
         f"[bold]โทร:[/bold]           {u.get('phone', '-')}\n"
         f"[bold]ความถนัด:[/bold]      {u.get('specialty', '-')}\n"
         f"[bold]วันที่สมัคร:[/bold]   {u.get('joinDate', '-')}",
-        title="โปรไฟล์", border_style="blue"
+        title="โปรไฟล์", border_style="bright_black"
     ))
 
     if Confirm.ask("\nต้องการแก้ไขโปรไฟล์?"):
@@ -254,7 +401,7 @@ def show_my_profile():
         if payload:
             result = api_patch("/me/", payload)
             if result:
-                console.print("[bold green]✅ อัปเดตโปรไฟล์สำเร็จ[/bold green]")
+                ok("อัปเดตโปรไฟล์สำเร็จ")
             time.sleep(1)
     pause()
 
@@ -266,24 +413,29 @@ def show_my_profile():
 # GET /api/dashboard-stats/
 def admin_dashboard():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📊 Dashboard[/bold cyan]\n")
+    section("Dashboard", "📊")
 
     data = api_get("/dashboard-stats/")
     if not data:
         pause(); return
 
+    def scard(val, label, vc, bc):
+        return Panel(
+            f"[bold {vc}]{val}[/bold {vc}]\n[dim white]{label}[/dim white]",
+            border_style=bc, padding=(1, 4), expand=True
+        )
     cards = [
-        Panel(f"[bold white]{data.get('total', 0)}[/bold white]\n[dim]งานทั้งหมด[/dim]",        border_style="blue",    padding=(1, 3)),
-        Panel(f"[bold yellow]{data.get('pending', 0)}[/bold yellow]\n[dim]รอดำเนินการ[/dim]",   border_style="yellow",  padding=(1, 3)),
-        Panel(f"[bold blue]{data.get('assigned', 0)}[/bold blue]\n[dim]มอบหมายแล้ว[/dim]",      border_style="blue",    padding=(1, 3)),
-        Panel(f"[bold cyan]{data.get('in_progress', 0)}[/bold cyan]\n[dim]กำลังดำเนิน[/dim]",   border_style="cyan",    padding=(1, 3)),
-        Panel(f"[bold green]{data.get('completed', 0)}[/bold green]\n[dim]เสร็จสิ้น[/dim]",     border_style="green",   padding=(1, 3)),
-        Panel(f"[bold red]{data.get('overdue', 0)}[/bold red]\n[dim]เกินกำหนด[/dim]",           border_style="red",     padding=(1, 3)),
-        Panel(f"[bold magenta]{data.get('pending_approval', 0)}[/bold magenta]\n[dim]รออนุมัติ[/dim]", border_style="magenta", padding=(1, 3)),
-        Panel(f"[bold green]{data.get('approved', 0)}[/bold green]\n[dim]อนุมัติแล้ว[/dim]",    border_style="green",   padding=(1, 3)),
-        Panel(f"[bold cyan]{data.get('technicians', 0)}[/bold cyan]\n[dim]จำนวนช่าง[/dim]",     border_style="cyan",    padding=(1, 3)),
+        scard(data.get("total",           0), "งานทั้งหมด",   "bright_white",   "bright_black"),
+        scard(data.get("pending",         0), "รอดำเนินการ",  "yellow",         "yellow"),
+        scard(data.get("assigned",        0), "มอบหมายแล้ว",  "bright_blue",    "bright_blue"),
+        scard(data.get("in_progress",     0), "กำลังดำเนิน",  "bright_cyan",    "bright_cyan"),
+        scard(data.get("completed",       0), "เสร็จสิ้น",    "bright_green",   "bright_green"),
+        scard(data.get("overdue",         0), "เกินกำหนด",    "bright_red",     "bright_red"),
+        scard(data.get("pending_approval",0), "รออนุมัติ",    "bright_magenta", "bright_magenta"),
+        scard(data.get("approved",        0), "อนุมัติแล้ว",  "bright_green",   "bright_green"),
+        scard(data.get("technicians",     0), "จำนวนช่าง",    "bright_cyan",    "bright_black"),
     ]
-    console.print(Columns(cards[0:3], equal=True))
+    console.print(Columns(cards[0:3], equal=True, expand=True))
     console.print(Columns(cards[3:6], equal=True))
     console.print(Columns(cards[6:9], equal=True))
     pause()
@@ -292,16 +444,16 @@ def admin_dashboard():
 # GET /api/maintenance-requests/
 def admin_list_requests():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📋 รายการแจ้งซ่อมทั้งหมด[/bold cyan]\n")
+    section("รายการแจ้งซ่อมทั้งหมด", "📋")
 
     data = api_get("/maintenance-requests/")
     if data is None:
         pause(); return
     if not data:
-        console.print("[dim]ไม่มีรายการ[/dim]")
+        info("ไม่มีรายการ")
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="cyan", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID",       style="dim", width=5)
     table.add_column("Code",     width=12)
     table.add_column("หมวด",     width=13)
@@ -327,64 +479,84 @@ def admin_list_requests():
 # PATCH /api/maintenance-requests/<pk>/manage/
 def admin_manage_request():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]⚙️  จัดการคำขอ (มอบหมาย / สถานะ / อนุมัติ)[/bold cyan]\n")
+    section(" จัดการคำขอ (มอบหมาย / สถานะ / อนุมัติ)", "⚙️")
 
-    pk = Prompt.ask("ระบุ Request ID")
-    detail = api_get(f"/maintenance-requests/{pk}/")
-    if not detail:
-        pause(); return
+    # ── แสดง list ก่อน ──
+    with console.status("  [bright_cyan]โหลดรายการ...[/bright_cyan]"):
+        all_reqs = api_get("/maintenance-requests/")
 
-    console.print(Panel(
-        f"[bold]Code:[/bold]      {detail.get('request_code')}\n"
-        f"[bold]หมวด:[/bold]      {detail.get('category')}   [bold]สถานที่:[/bold] {detail.get('location')}\n"
-        f"[bold]รายละเอียด:[/bold] {detail.get('description')}\n"
-        f"[bold]ลูกบ้าน:[/bold]   {detail.get('resident', '-')}   [bold]ช่าง:[/bold] {detail.get('technician', '-')}\n"
-        f"[bold]Priority:[/bold]  {detail.get('priority')}   [bold]Status:[/bold] {detail.get('status')}\n"
-        f"[bold]Deadline:[/bold]  {detail.get('deadline', '-')}",
-        title=f"Request #{pk}", border_style="cyan"
-    ))
+    if all_reqs:
+        show_request_selector(all_reqs, "รายการแจ้งซ่อมทั้งหมด")
+        pk = Prompt.ask("  [bright_cyan]›[/bright_cyan] Request ID")
 
-    console.print("\n[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
-    payload = {}
+        detail = api_get(f"/maintenance-requests/{pk}/")
+        if not detail:
+            pause()
+            return
 
-    s = Prompt.ask("Status [pending/assigned/in-progress/completed/cancelled]", default="").strip()
-    if s: payload["status"] = s
+        console.print(Panel(
+            f"[bold]Code:[/bold]      {detail.get('request_code')}\n"
+            f"[bold]หมวด:[/bold]      {detail.get('category')}   [bold]สถานที่:[/bold] {detail.get('location')}\n"
+            f"[bold]รายละเอียด:[/bold] {detail.get('description')}\n"
+            f"[bold]ลูกบ้าน:[/bold]   {detail.get('resident', '-')}   [bold]ช่าง:[/bold] {detail.get('technician', '-')}\n"
+            f"[bold]Priority:[/bold]  {detail.get('priority')}   [bold]Status:[/bold] {detail.get('status')}\n"
+            f"[bold]Deadline:[/bold]  {detail.get('deadline', '-')}",
+            title=f"Request #{pk}",
+            border_style="bright_black"
+        ))
 
-    p = Prompt.ask("Priority [low/medium/high]", default="").strip()
-    if p: payload["priority"] = p
+        console.print("\n[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
 
-    tid = Prompt.ask("Technician ID (มอบหมายช่าง)", default="").strip()
-    if tid: payload["technician_id"] = int(tid)
+        payload = {}
 
-    dl = Prompt.ask("Deadline (YYYY-MM-DDTHH:MM:SS)", default="").strip()
-    if dl: payload["deadline"] = dl
+        s = Prompt.ask(
+            "Status [pending/assigned/in-progress/completed/cancelled]",
+            default=""
+        ).strip()
+        if s:
+            payload["status"] = s
 
-    sd = Prompt.ask("Scheduled Date (YYYY-MM-DD)", default="").strip()
-    if sd: payload["scheduled_date"] = sd
+        p = Prompt.ask(
+            "Priority [low/medium/high]",
+            default=""
+        ).strip()
+        if p:
+            payload["priority"] = p
 
-    st = Prompt.ask("Scheduled Time (HH:MM)", default="").strip()
-    if st: payload["scheduled_time"] = st
+        tid = Prompt.ask(
+            "Technician ID (มอบหมายช่าง)",
+            default=""
+        ).strip()
+        if tid:
+            payload["technician_id"] = int(tid)
 
-    ac = Prompt.ask("Approved Completion [pending_approval/approved/rejected]", default="").strip()
-    if ac: payload["approved_completion"] = ac
+        if not payload:
+            info("ไม่มีการเปลี่ยนแปลง")
+            pause()
+            return
 
-    if not payload:
-        console.print("[dim]ไม่มีการเปลี่ยนแปลง[/dim]")
-        pause(); return
+        if Confirm.ask(f"\nยืนยันบันทึก Request #{pk}?"):
+            with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
+                result = api_patch(
+                    f"/maintenance-requests/{pk}/manage/",
+                    payload
+                )
 
-    if Confirm.ask(f"\nยืนยันบันทึกการเปลี่ยนแปลง Request #{pk}?"):
-        with console.status("[cyan]กำลังบันทึก...[/cyan]"):
-            result = api_patch(f"/maintenance-requests/{pk}/manage/", payload)
-        if result:
-            console.print("[bold green]✅ บันทึกสำเร็จ![/bold green]")
-        time.sleep(1.5)
-    pause()
+            if result:
+                ok("บันทึกสำเร็จ!")
 
+            time.sleep(1.5)
+
+        pause()
+    else:
+        info("ไม่มีรายการ")
+        pause()
+        return
 
 # GET /api/technician-schedule/
 def admin_technician_schedule():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]🧑‍🔧 ตารางงานช่าง[/bold cyan]\n")
+    section("ตารางงานช่าง", "🧑‍🔧")
 
     data = api_get("/technician-schedule/")
     if data is None:
@@ -424,13 +596,13 @@ def admin_technician_schedule():
 # GET /api/technicians/
 def admin_list_technicians():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]👷 รายชื่อช่างทั้งหมด[/bold cyan]\n")
+    section("รายชื่อช่างทั้งหมด", "👷")
 
     data = api_get("/technicians/")
     if data is None:
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="green", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID",       style="dim", width=5)
     table.add_column("ชื่อ",     min_width=16)
     table.add_column("ความถนัด", width=14)
@@ -451,13 +623,13 @@ def admin_list_technicians():
 # GET /api/users/
 def admin_list_users():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]👥 รายชื่อผู้ใช้ทั้งหมด[/bold cyan]\n")
+    section("รายชื่อผู้ใช้ทั้งหมด", "👥")
 
     data = api_get("/users/")
     if data is None:
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="blue", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID",       style="dim", width=5)
     table.add_column("ชื่อ",     min_width=16)
     table.add_column("Username", width=16)
@@ -480,7 +652,7 @@ def admin_list_users():
 # POST /api/users/
 def admin_create_user():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]➕ เพิ่มผู้ใช้ใหม่[/bold cyan]\n")
+    section("เพิ่มผู้ใช้ใหม่", "➕")
 
     name     = Prompt.ask("ชื่อ-นามสกุล")
     email    = Prompt.ask("Email")
@@ -496,10 +668,10 @@ def admin_create_user():
                "unit_number": unit, "phone": phone, "specialty": specialty}
 
     if Confirm.ask("\nยืนยันสร้างผู้ใช้?"):
-        with console.status("[cyan]กำลังสร้าง...[/cyan]"):
+        with console.status("  [bright_cyan]กำลังสร้าง...[/bright_cyan]"):
             result = api_post("/users/", payload)
         if result:
-            console.print(f"[bold green]✅ สร้างผู้ใช้สำเร็จ! ID: {result.get('id')}[/bold green]")
+            ok(f"สร้างผู้ใช้สำเร็จ! ID: {result.get('id')}")
         time.sleep(1.5)
     pause()
 
@@ -507,7 +679,7 @@ def admin_create_user():
 # PUT /api/users/<pk>/
 def admin_edit_user():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]✏️  แก้ไขผู้ใช้[/bold cyan]\n")
+    section(" แก้ไขผู้ใช้", "✏️")
 
     pk = Prompt.ask("ระบุ User ID")
     console.print("[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
@@ -527,14 +699,14 @@ def admin_edit_user():
     if phone: payload["phone"] = phone
 
     if not payload:
-        console.print("[dim]ไม่มีการเปลี่ยนแปลง[/dim]")
+        info("ไม่มีการเปลี่ยนแปลง")
         pause(); return
 
     if Confirm.ask(f"\nยืนยันแก้ไข User #{pk}?"):
-        with console.status("[cyan]กำลังบันทึก...[/cyan]"):
+        with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
             result = api_put(f"/users/{pk}/", payload)
         if result:
-            console.print("[bold green]✅ แก้ไขสำเร็จ![/bold green]")
+            ok("แก้ไขสำเร็จ!")
         time.sleep(1.5)
     pause()
 
@@ -549,7 +721,7 @@ def admin_delete_user():
         with console.status("[red]กำลังลบ...[/red]"):
             result = api_delete(f"/users/{pk}/")
         if result:
-            console.print("[bold green]✅ ลบผู้ใช้สำเร็จ[/bold green]")
+            ok("ลบผู้ใช้สำเร็จ")
         time.sleep(1.5)
     pause()
 
@@ -557,7 +729,7 @@ def admin_delete_user():
 # POST /api/announcements/
 def admin_post_announcement():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📢 โพสต์ประกาศ[/bold cyan]\n")
+    section("โพสต์ประกาศ", "📢")
 
     title    = Prompt.ask("หัวข้อ")
     message  = Prompt.ask("รายละเอียด")
@@ -568,17 +740,17 @@ def admin_post_announcement():
         f"[bold]หัวข้อ:[/bold]      {title}\n"
         f"[bold]รายละเอียด:[/bold]  {message}\n"
         f"[bold]ประเภท:[/bold]      {ann_type}   [bold]ความสำคัญ:[/bold] {priority}",
-        title="ตัวอย่างประกาศ", border_style="yellow"
+        title="ตัวอย่างประกาศ", border_style="bright_black"
     ))
 
     if Confirm.ask("\nยืนยันโพสต์ประกาศ?"):
-        with console.status("[cyan]กำลังโพสต์...[/cyan]"):
+        with console.status("  [bright_cyan]กำลังโพสต์...[/bright_cyan]"):
             result = api_post("/announcements/", {
                 "title": title, "message": message,
                 "type": ann_type, "priority": priority,
             })
         if result:
-            console.print("[bold green]✅ โพสต์ประกาศสำเร็จ![/bold green]")
+            ok("โพสต์ประกาศสำเร็จ!")
         time.sleep(1.5)
     pause()
 
@@ -590,16 +762,16 @@ def admin_post_announcement():
 # GET /api/tasks/my/
 def tech_my_tasks():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📋 งานของฉัน[/bold cyan]\n")
+    section("งานของฉัน", "📋")
 
     data = api_get("/tasks/my/")
     if data is None:
         pause(); return
     if not data:
-        console.print("[dim]ไม่มีงานที่ได้รับมอบหมาย[/dim]")
+        info("ไม่มีงานที่ได้รับมอบหมาย")
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="cyan", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID",       style="dim", width=5)
     table.add_column("Code",     width=12)
     table.add_column("หมวด",    width=13)
@@ -624,50 +796,118 @@ def tech_my_tasks():
 # GET + PATCH /api/tasks/<pk>/
 def tech_update_task():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]✏️  อัปเดตสถานะงาน[/bold cyan]\n")
+    section(" อัปเดตสถานะงาน", "✏️")
 
-    pk = Prompt.ask("ระบุ Task ID")
-    detail = api_get(f"/tasks/{pk}/")
-    if not detail:
-        pause(); return
+    # ── แสดง list งานของฉันก่อน ──
+    with console.status("  [bright_cyan]โหลดรายการงาน...[/bright_cyan]"):
+        all_tasks = api_get("/tasks/my/")
 
-    console.print(Panel(
-        f"[bold]Code:[/bold]         {detail.get('request_code')}\n"
-        f"[bold]หมวด:[/bold]         {detail.get('category')}   [bold]สถานที่:[/bold] {detail.get('location')}\n"
-        f"[bold]รายละเอียด:[/bold]    {detail.get('description')}\n"
-        f"[bold]Status:[/bold]        {detail.get('status')}   [bold]Deadline:[/bold] {detail.get('deadline', '-')}",
-        title=f"Task #{pk}", border_style="cyan"
-    ))
+    if all_tasks:
+        show_task_selector(all_tasks, "งานของฉัน")
+        pk = Prompt.ask("  [bright_cyan]›[/bright_cyan] Request ID")
 
-    console.print("\n[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
-    payload = {}
+        detail = api_get(f"/maintenance-requests/{pk}/")
+        if not detail:
+            pause()
+            return
 
-    s = Prompt.ask("Status ใหม่ [assigned/in-progress/completed]", default="").strip()
-    if s: payload["status"] = s
-    notes = Prompt.ask("บันทึกช่าง (technician_notes)", default="").strip()
-    if notes: payload["technician_notes"] = notes
-    materials = Prompt.ask("วัสดุที่ใช้ (materials_used)", default="").strip()
-    if materials: payload["materials_used"] = materials
+        console.print(Panel(
+            f"[bold]Code:[/bold]      {detail.get('request_code')}\n"
+            f"[bold]หมวด:[/bold]      {detail.get('category')}   [bold]สถานที่:[/bold] {detail.get('location')}\n"
+            f"[bold]รายละเอียด:[/bold] {detail.get('description')}\n"
+            f"[bold]ลูกบ้าน:[/bold]   {detail.get('resident', '-')}   [bold]ช่าง:[/bold] {detail.get('technician', '-')}\n"
+            f"[bold]Priority:[/bold]  {detail.get('priority')}   [bold]Status:[/bold] {detail.get('status')}\n"
+            f"[bold]Deadline:[/bold]  {detail.get('deadline', '-')}",
+            title=f"Request #{pk}",
+            border_style="bright_black"
+        ))
 
-    if not payload:
-        console.print("[dim]ไม่มีการเปลี่ยนแปลง[/dim]")
-        pause(); return
+        console.print("\n[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
 
-    if Confirm.ask(f"\nยืนยันบันทึก Task #{pk}?"):
-        with console.status("[cyan]กำลังบันทึก...[/cyan]"):
-            result = api_patch(f"/tasks/{pk}/", payload)
-        if result:
-            console.print("[bold green]✅ บันทึกสำเร็จ![/bold green]")
-        time.sleep(1.5)
-    pause()
+        payload = {}
+
+        s = Prompt.ask(
+            "Status [pending/assigned/in-progress/completed/cancelled]",
+            default=""
+        ).strip()
+        if s:
+            payload["status"] = s
+
+        p = Prompt.ask(
+            "Priority [low/medium/high]",
+            default=""
+        ).strip()
+        if p:
+            payload["priority"] = p
+
+        tid = Prompt.ask(
+            "Technician ID (มอบหมายช่าง)",
+            default=""
+        ).strip()
+        if tid:
+            payload["technician_id"] = int(tid)
+
+        if not payload:
+            info("ไม่มีการเปลี่ยนแปลง")
+            pause()
+            return
+
+        if Confirm.ask(f"\nยืนยันบันทึก Request #{pk}?"):
+            with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
+                result = api_patch(
+                    f"/maintenance-requests/{pk}/manage/",
+                    payload
+                )
+
+            if result:
+                ok("บันทึกสำเร็จ!")
+
+            time.sleep(1.5)
+
+        pause()
+    else:
+        info("ไม่มีงานที่ได้รับมอบหมาย")
+        pause()
+        return
 
 
 # POST /api/tasks/<pk>/request-extension/
 def tech_request_extension():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📅 ขอขยายเวลางาน[/bold cyan]\n")
+    section("ขอขยายเวลางาน", "📅")
 
-    pk     = Prompt.ask("ระบุ Task ID")
+    # ── แสดง list งานของฉันก่อน ──
+    with console.status("  [bright_cyan]โหลดรายการงาน...[/bright_cyan]"):
+        all_tasks = api_get("/tasks/my/")
+    if all_tasks:
+        active = [t for t in all_tasks if t.get("status") not in ("completed", "cancelled")]
+        if not active:
+            info("ไม่มีงานที่สามารถขอขยายเวลาได้")
+            pause(); return
+        table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", show_lines=False)
+        table.add_column("ID",           style="bold cyan", width=5)
+        table.add_column("Code",         width=12)
+        table.add_column("หมวด",        width=13)
+        table.add_column("Status",       width=14)
+        table.add_column("Deadline",     width=20)
+        table.add_column("Extension",    width=12)
+        for t in active:
+            ext = t.get("extension_status") or "none"
+            ext_colors = {"pending": "yellow", "approved": "green", "rejected": "red", "none": "dim"}
+            table.add_row(
+                str(t.get("id")), t.get("request_code", ""),
+                t.get("category", ""),
+                status_text(t.get("status", "")),
+                t.get("deadline", "-") or "-",
+                Text(ext, style=ext_colors.get(ext, "white")),
+            )
+        console.print(table)
+        console.print()
+    else:
+        info("ไม่มีงานที่ได้รับมอบหมาย")
+        pause(); return
+
+    pk     = Prompt.ask("  [bright_cyan]›[/bright_cyan] Task ID")
     days   = Prompt.ask("จำนวนวันที่ต้องการขยาย")
     reason = Prompt.ask("เหตุผล")
 
@@ -675,7 +915,7 @@ def tech_request_extension():
         with console.status("[cyan]กำลังส่งคำขอ...[/cyan]"):
             result = api_post(f"/tasks/{pk}/request-extension/", {"days": days, "reason": reason})
         if result:
-            console.print("[bold green]✅ ส่งคำขอขยายเวลาสำเร็จ![/bold green]")
+            ok("ส่งคำขอขยายเวลาสำเร็จ!")
         time.sleep(1.5)
     pause()
 
@@ -687,16 +927,16 @@ def tech_request_extension():
 # GET /api/maintenance-requests/
 def resident_my_requests():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]📋 รายการแจ้งซ่อมของฉัน[/bold cyan]\n")
+    section("รายการแจ้งซ่อมของฉัน", "📋")
 
     data = api_get("/maintenance-requests/")
     if data is None:
         pause(); return
     if not data:
-        console.print("[dim]ยังไม่มีรายการแจ้งซ่อม[/dim]")
+        info("ยังไม่มีรายการแจ้งซ่อม")
         pause(); return
 
-    table = Table(box=box.ROUNDED, border_style="cyan", show_lines=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
     table.add_column("ID",       style="dim", width=5)
     table.add_column("Code",     width=12)
     table.add_column("หมวด",    width=13)
@@ -722,7 +962,7 @@ def resident_my_requests():
 # POST /api/maintenance-requests/
 def resident_submit_request():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]➕ แจ้งซ่อม/ปัญหา[/bold cyan]\n")
+    section("แจ้งซ่อม/ปัญหา", "➕")
 
     category    = Prompt.ask("หมวดหมู่ เช่น ไฟฟ้า, ประปา, งานช่าง")
     location    = Prompt.ask("สถานที่ เช่น ห้องน้ำชั้น 1, บริเวณรั้ว")
@@ -735,11 +975,11 @@ def resident_submit_request():
         f"[bold]สถานที่:[/bold]    {location}\n"
         f"[bold]รายละเอียด:[/bold] {description}\n"
         f"[bold]Priority:[/bold]   {priority}",
-        title="สรุปคำขอแจ้งซ่อม", border_style="yellow"
+        title="สรุปคำขอแจ้งซ่อม", border_style="bright_black"
     ))
 
     if Confirm.ask("\nยืนยันส่งคำขอแจ้งซ่อม?"):
-        with console.status("[cyan]กำลังส่ง...[/cyan]"):
+        with console.status("  [bright_cyan]กำลังส่ง...[/bright_cyan]"):
             result = api_post("/maintenance-requests/", {
                 "category": category, "location": location,
                 "description": description, "priority": priority,
@@ -747,7 +987,7 @@ def resident_submit_request():
             })
         if result:
             code = result.get("request", {}).get("request_code", "")
-            console.print(f"[bold green]✅ แจ้งซ่อมสำเร็จ! Code: {code}[/bold green]")
+            ok(f"แจ้งซ่อมสำเร็จ! Code: {code}")
         time.sleep(1.5)
     pause()
 
@@ -755,28 +995,222 @@ def resident_submit_request():
 # GET /api/maintenance-requests/<pk>/
 def resident_request_detail():
     clear(); show_banner(); show_user_bar()
-    console.print("[bold cyan]🔍 ดูรายละเอียดคำขอ[/bold cyan]\n")
+    section("ดูรายละเอียดคำขอ", "🔍")
 
-    pk   = Prompt.ask("ระบุ Request ID")
-    data = api_get(f"/maintenance-requests/{pk}/")
-    if not data:
+    # ── แสดง list คำขอของฉันก่อน ──
+    with console.status("  [bright_cyan]โหลดรายการ...[/bright_cyan]"):
+        all_reqs = api_get("/maintenance-requests/")
+
+    if all_reqs:
+        show_request_selector(all_reqs, "รายการแจ้งซ่อมของฉัน")
+        pk = Prompt.ask("  [bright_cyan]›[/bright_cyan] Request ID")
+
+        detail = api_get(f"/maintenance-requests/{pk}/")
+        if not detail:
+            pause()
+            return
+
+        console.print(Panel(
+            f"[bold]Code:[/bold]      {detail.get('request_code')}\n"
+            f"[bold]หมวด:[/bold]      {detail.get('category')}   [bold]สถานที่:[/bold] {detail.get('location')}\n"
+            f"[bold]รายละเอียด:[/bold] {detail.get('description')}\n"
+            f"[bold]ลูกบ้าน:[/bold]   {detail.get('resident', '-')}   [bold]ช่าง:[/bold] {detail.get('technician', '-')}\n"
+            f"[bold]Priority:[/bold]  {detail.get('priority')}   [bold]Status:[/bold] {detail.get('status')}\n"
+            f"[bold]Deadline:[/bold]  {detail.get('deadline', '-')}",
+            title=f"Request #{pk}",
+            border_style="bright_black"
+        ))
+
+        console.print("\n[dim]กด Enter ข้ามฟิลด์ที่ไม่ต้องการเปลี่ยน[/dim]\n")
+
+        payload = {}
+
+        s = Prompt.ask(
+            "Status [pending/assigned/in-progress/completed/cancelled]",
+            default=""
+        ).strip()
+        if s:
+            payload["status"] = s
+
+        p = Prompt.ask(
+            "Priority [low/medium/high]",
+            default=""
+        ).strip()
+        if p:
+            payload["priority"] = p
+
+        tid = Prompt.ask(
+            "Technician ID (มอบหมายช่าง)",
+            default=""
+        ).strip()
+        if tid:
+            payload["technician_id"] = int(tid)
+
+        if not payload:
+            info("ไม่มีการเปลี่ยนแปลง")
+            pause()
+            return
+
+        if Confirm.ask(f"\nยืนยันบันทึก Request #{pk}?"):
+            with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
+                result = api_patch(
+                    f"/maintenance-requests/{pk}/manage/",
+                    payload
+                )
+
+            if result:
+                ok("บันทึกสำเร็จ!")
+
+            time.sleep(1.5)
+
+        pause()
+    else:
+        info("ยังไม่มีรายการแจ้งซ่อม")
+        pause()
+        return
+
+
+# ══════════════════════════════════════════════
+# NOTIFICATIONS — ใช้ได้ทุก role
+# ══════════════════════════════════════════════
+
+# GET /api/notifications/
+def show_notifications():
+    clear(); show_banner(); show_user_bar()
+    section("การแจ้งเตือน", "🔔")
+
+    data = api_get("/notifications/")
+    if data is None:
         pause(); return
 
-    console.print(Panel(
-        f"[bold]Code:[/bold]           {data.get('request_code')}\n"
-        f"[bold]หมวด:[/bold]           {data.get('category')}\n"
-        f"[bold]สถานที่:[/bold]         {data.get('location')}\n"
-        f"[bold]รายละเอียด:[/bold]      {data.get('description')}\n"
-        f"[bold]Priority:[/bold]        {data.get('priority')}\n"
-        f"[bold]Status:[/bold]          {data.get('status')}\n"
-        f"[bold]การอนุมัติ:[/bold]      {data.get('approved_completion', '-')}\n"
-        f"[bold]ช่าง:[/bold]            {data.get('technician', '-')}\n"
-        f"[bold]โทรช่าง:[/bold]         {data.get('technician_phone', '-')}\n"
-        f"[bold]นัดวันที่:[/bold]       {data.get('scheduled_date', '-')} {data.get('scheduled_time', '') or ''}\n"
-        f"[bold]Deadline:[/bold]        {data.get('deadline', '-')}\n"
-        f"[bold]วันที่สร้าง:[/bold]     {data.get('created_at', '-')}",
-        title=f"Request #{pk}", border_style="cyan"
-    ))
+    if not data:
+        info("ไม่มีการแจ้งเตือน")
+        pause(); return
+
+    unread = sum(1 for n in data if not n.get("read"))
+    if unread:
+        console.print(f"[bold yellow]📬 ยังไม่อ่าน {unread} รายการ[/bold yellow]\n")
+
+    type_style = {
+        "info":    ("💬", "cyan"),
+        "warning": ("⚠️ ", "yellow"),
+        "success": ("✅", "green"),
+        "error":   ("❌", "red"),
+    }
+
+    table = Table(box=box.SIMPLE_HEAD, border_style="bright_black", header_style="bold bright_white", show_lines=False)
+    table.add_column("ID",      style="dim", width=8)
+    table.add_column(" ",       width=3)
+    table.add_column("หัวข้อ",  min_width=20)
+    table.add_column("ข้อความ", min_width=30)
+    table.add_column("วันที่",  width=22)
+    table.add_column("อ่าน",   width=6, justify="center")
+
+    for n in data:
+        ntype = n.get("type", "info")
+        icon, color = type_style.get(ntype, ("💬", "white"))
+        read_mark = "[dim]✓[/dim]" if n.get("read") else "[bold yellow]●[/bold yellow]"
+        table.add_row(
+            str(n.get("id", "")),
+            icon,
+            Text(n.get("title", ""), style=color if not n.get("read") else "dim"),
+            Text(n.get("message", ""), style="dim" if n.get("read") else "white"),
+            n.get("timestamp", "")[:19].replace("T", " "),
+            read_mark,
+        )
+
+    console.print(table)
+    console.print()
+
+    action = Prompt.ask(
+        "เลือก [bold]R[/bold]=อ่านรายการ  [bold]A[/bold]=อ่านทั้งหมด  [bold]D[/bold]=ลบรายการ  [bold]Enter[/bold]=กลับ",
+        default=""
+    ).strip().upper()
+
+    if action == "A":
+        with console.status("[cyan]กำลังทำเครื่องหมายอ่านทั้งหมด...[/cyan]"):
+            result = api_post("/notifications/read-all/")
+        if result:
+            ok("ทำเครื่องหมายอ่านทั้งหมดสำเร็จ")
+        time.sleep(1)
+
+    elif action == "R":
+        nid = Prompt.ask("ระบุ Notification ID").strip()
+        with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
+            result = api_patch(f"/notifications/{nid}/read/", {})
+        if result:
+            ok("ทำเครื่องหมายอ่านแล้ว")
+        time.sleep(1)
+
+    elif action == "D":
+        nid = Prompt.ask("ระบุ Notification ID ที่ต้องการลบ").strip()
+        if Confirm.ask(f"ยืนยันลบการแจ้งเตือน #{nid}?"):
+            with console.status("[red]กำลังลบ...[/red]"):
+                result = api_delete(f"/notifications/{nid}/")
+            if result:
+                ok("ลบสำเร็จ")
+            time.sleep(1)
+
+    pause()
+
+
+# ══════════════════════════════════════════════
+# RESPOND EXTENSION
+# ══════════════════════════════════════════════
+
+# POST /api/tasks/<pk>/respond-extension/
+# ใช้ได้: resident (เจ้าของ request) และ admin/officer
+def respond_extension():
+    clear(); show_banner(); show_user_bar()
+    section("ตอบรับคำขอขยายเวลา", "📅")
+
+    role = SESSION.get("role", "")
+
+    # แสดง list งานที่มี extension pending ก่อน
+    if role in ("admin", "officer"):
+        data = api_get("/maintenance-requests/")
+        label = "Request"
+    else:
+        data = api_get("/maintenance-requests/")
+        label = "Request"
+
+    if data:
+        pending_ext = [r for r in data if (r.get("extension_status") or "none") == "pending"]
+        if pending_ext:
+            table = Table(title=f"รายการที่รอตอบรับขยายเวลา ({len(pending_ext)} รายการ)",
+                          box=box.SIMPLE_HEAD, border_style="bright_black")
+            table.add_column("ID", width=5)
+            table.add_column("Code", width=12)
+            table.add_column("หมวด")
+            table.add_column("ขอขยาย (วัน)", width=14, justify="center")
+            table.add_column("เหตุผล")
+            for r in pending_ext:
+                table.add_row(
+                    str(r.get("id")), r.get("request_code", ""),
+                    r.get("category", ""),
+                    str(r.get("extension_requested_days", "-")),
+                    r.get("extension_reason", "-"),
+                )
+            console.print(table)
+        else:
+            info("ไม่มีคำขอขยายเวลาที่รออนุมัติ")
+            pause(); return
+    console.print()
+
+    pk = Prompt.ask(f"ระบุ {label} ID")
+    decision = Prompt.ask("ตัดสินใจ [approved/rejected]", choices=["approved", "rejected"])
+
+    action_label = "อนุมัติ ✅" if decision == "approved" else "ปฏิเสธ ❌"
+    if Confirm.ask(f"\nยืนยัน[bold]{action_label}[/bold] คำขอขยายเวลา #{pk}?"):
+        with console.status("  [bright_cyan]บันทึก...[/bright_cyan]"):
+            result = api_post(f"/tasks/{pk}/respond-extension/", {"decision": decision})
+        if result:
+            if decision == "approved":
+                new_deadline = result.get("request", {}).get("deadline", "-")
+                ok(f"อนุมัติสำเร็จ! Deadline ใหม่: {new_deadline}")
+            else:
+                ok("ปฏิเสธคำขอสำเร็จ")
+        time.sleep(1.5)
     pause()
 
 
@@ -785,30 +1219,46 @@ def resident_request_detail():
 # ══════════════════════════════════════════════
 
 def build_menu(items):
-    """items = list of (key, icon, label)"""
-    table = Table(box=box.ROUNDED, border_style="cyan", show_header=False, padding=(0, 2))
-    table.add_column("key",  style="bold cyan", width=4)
-    table.add_column("icon", width=3)
-    table.add_column("label")
+    """items = list of (key, icon, label). Separator = ('', '', '---')"""
+    console.print()
     for key, icon, label in items:
-        table.add_row(key, icon, label)
-    console.print(table)
+        if label == "---":
+            console.print("  [dim white]" + "·" * 36 + "[/dim white]")
+            continue
+        if key == "0":
+            style_key = "dim white"
+            style_label = "dim white"
+        else:
+            style_key = "bold bright_cyan"
+            style_label = "bright_white"
+        console.print(
+            f"  [{style_key}] {key} [/{style_key}]"
+            f"  {icon}"
+            f"  [{style_label}]{label}[/{style_label}]"
+        )
+    console.print()
 
 
 def admin_menu():
     items = [
         ("1", "📊", "Dashboard"),
         ("2", "📋", "รายการแจ้งซ่อมทั้งหมด"),
-        ("3", "⚙️ ", "จัดการคำขอ (มอบหมาย / สถานะ / อนุมัติ)"),
+        ("3", "⚙️ ", "จัดการคำขอ  (มอบหมาย / สถานะ / อนุมัติ)"),
+        ("",  "",   "---"),
         ("4", "🧑‍🔧", "ตารางงานช่าง"),
         ("5", "👷", "รายชื่อช่างทั้งหมด"),
+        ("",  "",   "---"),
         ("6", "👥", "รายชื่อผู้ใช้ทั้งหมด"),
         ("7", "➕", "เพิ่มผู้ใช้ใหม่"),
         ("8", "✏️ ", "แก้ไขผู้ใช้"),
         ("9", "🗑️ ", "ลบผู้ใช้"),
+        ("",  "",   "---"),
         ("A", "📢", "โพสต์ประกาศ"),
         ("B", "📢", "ดูประกาศทั้งหมด"),
-        ("C", "👤", "โปรไฟล์ของฉัน"),
+        ("C", "📅", "ตอบรับคำขอขยายเวลา"),
+        ("D", "🔔", "การแจ้งเตือน"),
+        ("",  "",   "---"),
+        ("E", "👤", "โปรไฟล์ของฉัน"),
         ("0", "🚪", "ออกจากระบบ"),
     ]
     actions = {
@@ -817,14 +1267,15 @@ def admin_menu():
         "5": admin_list_technicians,  "6": admin_list_users,
         "7": admin_create_user,       "8": admin_edit_user,
         "9": admin_delete_user,       "A": admin_post_announcement,
-        "B": show_announcements,      "C": show_my_profile,
+        "B": show_announcements,      "C": respond_extension,
+        "D": show_notifications,      "E": show_my_profile,
     }
     choices = [k for k, _, _ in items]
 
     while True:
         clear(); show_banner(); show_user_bar()
         build_menu(items)
-        choice = Prompt.ask("เลือกเมนู", choices=choices).upper()
+        choice = Prompt.ask("  [dim white]›[/dim white]", choices=choices).upper()
         if choice == "0":
             break
         if choice in actions:
@@ -837,19 +1288,21 @@ def technician_menu():
         ("2", "✏️ ", "อัปเดตสถานะงาน"),
         ("3", "📅", "ขอขยายเวลางาน"),
         ("4", "📢", "ดูประกาศ"),
-        ("5", "👤", "โปรไฟล์ของฉัน"),
+        ("5", "🔔", "การแจ้งเตือน"),
+        ("6", "👤", "โปรไฟล์ของฉัน"),
         ("0", "🚪", "ออกจากระบบ"),
     ]
     actions = {
-        "1": tech_my_tasks, "2": tech_update_task,
-        "3": tech_request_extension, "4": show_announcements, "5": show_my_profile,
+        "1": tech_my_tasks,       "2": tech_update_task,
+        "3": tech_request_extension, "4": show_announcements,
+        "5": show_notifications,  "6": show_my_profile,
     }
     choices = [k for k, _, _ in items]
 
     while True:
         clear(); show_banner(); show_user_bar()
         build_menu(items)
-        choice = Prompt.ask("เลือกเมนู", choices=choices)
+        choice = Prompt.ask("  [dim white]›[/dim white]", choices=choices)
         if choice == "0":
             break
         if choice in actions:
@@ -861,20 +1314,24 @@ def resident_menu():
         ("1", "📋", "รายการแจ้งซ่อมของฉัน"),
         ("2", "➕", "แจ้งซ่อม/ปัญหาใหม่"),
         ("3", "🔍", "ดูรายละเอียดคำขอ"),
-        ("4", "📢", "ดูประกาศ"),
-        ("5", "👤", "โปรไฟล์ของฉัน"),
+        ("4", "📅", "ตอบรับคำขอขยายเวลา (จากช่าง)"),
+        ("5", "📢", "ดูประกาศ"),
+        ("6", "🔔", "การแจ้งเตือน"),
+        ("7", "👤", "โปรไฟล์ของฉัน"),
         ("0", "🚪", "ออกจากระบบ"),
     ]
     actions = {
-        "1": resident_my_requests, "2": resident_submit_request,
-        "3": resident_request_detail, "4": show_announcements, "5": show_my_profile,
+        "1": resident_my_requests,   "2": resident_submit_request,
+        "3": resident_request_detail,"4": respond_extension,
+        "5": show_announcements,     "6": show_notifications,
+        "7": show_my_profile,
     }
     choices = [k for k, _, _ in items]
 
     while True:
         clear(); show_banner(); show_user_bar()
         build_menu(items)
-        choice = Prompt.ask("เลือกเมนู", choices=choices)
+        choice = Prompt.ask("  [dim white]›[/dim white]", choices=choices)
         if choice == "0":
             break
         if choice in actions:
@@ -910,7 +1367,7 @@ def cli(url):
         console.print(f"[red]Role '{role}' ไม่รู้จัก[/red]")
 
     clear()
-    console.print(Panel("[bold cyan]ขอบคุณที่ใช้งานระบบ 🏠[/bold cyan]", border_style="cyan"))
+    console.print(Panel("[bold cyan]ขอบคุณที่ใช้งานระบบ 🏠[/bold cyan]", border_style="bright_black"))
 
 
 if __name__ == "__main__":
