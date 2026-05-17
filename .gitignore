@@ -46,3 +46,6 @@ wheels/
 
 # PostgreSQL
 database/
+
+# Django
+staticfiles/

@@ -57,7 +57,7 @@ urlpatterns = [
     # React SPA fallback
     # =========================
     re_path(
-        r"^(?!api/|static/|media/|admin/).*$",
+        r"^(?!api/|static/|media/|admin).*$",
         TemplateView.as_view(template_name="index.html"),
         name="spa",
     ),
