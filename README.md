@@ -12,15 +12,16 @@ If you want to stop the containers and remove the volumes:
 ```
 docker compose down -v
 ```
-Uncase if you want to build the images again, do run this:
+Incase if you want to build the images again, do run this:
 ```
 rm -rf ./docker/postgresql/database
 
+(then proceeds to run the docker build again as normal)
 docker compose build
 ...
 ```
 
-Access:
+Default ports:
 ```
 http://localhost:8000/ (django rest)
 http://localhost:5678/ (n8n)
