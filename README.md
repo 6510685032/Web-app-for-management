@@ -1,4 +1,4 @@
-# <center>JurisiticPro : ระบบบริหารจัดการวางแผนงานนิติบุคคลบ้านจัดสรรค์</center>
+# <center>JuristicPro : ระบบบริหารจัดการวางแผนงานนิติบุคคลบ้านจัดสรรค์</center>
 
 # 1. ภาพรวมของระบบ (Overview)
 ระบบนี้เป็นแพลตฟอร์มที่จะช่วยในการบริหารจัดการนิติบุคคล (Digital Juristic Platform) โดยจะเข้ามาเชื่อมโยงการทำงานระหว่าง นิติบุคคล (Management), ลูกบ้าน (Residents) และ เจ้าหน้าที่หน้างาน (Staff) เข้าด้วยกัน เพื่อเพิ่มประสิทธิภาพในการจัดการงานซ่อมบำรุง, การสื่อสารภายในโครงการ, และการวิเคราะห์ข้อมูลเชิงบริหารผ่านแดชบอร์ดอัจฉริยะ
@@ -82,7 +82,11 @@ graph LR;
 
 # 8. Link 
 https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
+
 https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
+
+https://www.canva.com/design/DAHJ7CCuk3c/kGE937VShuZrITudhjnI1A/edit (Final Presentation)
+
 
 # 9. วันที่พรีเซ้น
 - ครั้งที่ 1: 2 ก.พ. 2569
