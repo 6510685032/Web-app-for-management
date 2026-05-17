@@ -36,18 +36,15 @@ services:
   minio-init:
     networks:
       - project-bridge
-    image: minio/mc:latest
+    build:
+      context: ./minio-init
+      dockerfile: Dockerfile
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_BUCKET_NAME=cn332-media
     depends_on:
       - minio
-    entrypoint: >
-      /bin/sh -c "
-      sleep 5;
-      mc alias set local http://minio:9000 minioadmin minioadmin;
-      mc mb local/cn332-media --ignore-existing;
-      mc anonymous set download local/cn332-media;
-      echo 'Bucket cn332-media is ready';
-      exit 0;
-      "
 
   django-rest:
     networks:

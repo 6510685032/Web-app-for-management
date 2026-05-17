@@ -101,10 +101,16 @@ AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_QUERYSTRING_AUTH = False  # Public read URLs (no signed query strings)
 AWS_S3_REGION_NAME = "us-east-1"  # Required by boto3 but ignored by MinIO
+AWS_S3_USE_SSL = False
+AWS_S3_URL_PROTOCOL = "http:"  # Generate http:// URLs (MinIO is not behind SSL)
+AWS_S3_ADDRESSING_STYLE = "path"  # MinIO requires path-style (not virtual-hosted)
 
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "addressing_style": "path",
+        },
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
