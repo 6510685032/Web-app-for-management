@@ -6,18 +6,14 @@ cd docker
 
 Build images and run the containers:
 ```
-docker compose build
-docker compose up
+docker compose up --build (if you don't want to build the images again, just run: docker compose up)
 ```
 
-If you want to stop the containers:
+To stop the containers:
 ```
-docker compose down
+docker compose down (if you want to remove the volumes, then do run: docker compose down -v)
 ```
-If you want to stop the containers and remove the volumes:
-```
-docker compose down -v
-```
+
 Incase if you want to build the images again, do run this:
 ```
 rm -rf ./postgresql/database
