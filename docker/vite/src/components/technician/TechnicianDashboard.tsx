@@ -6,6 +6,7 @@ import TechnicianSidebar from './TechnicianSidebar';
 import TechnicianHome from './TechnicianHome';
 import MyTasks from './MyTasks';
 import TaskDetail from './TaskDetail';
+import TechnicianCalendar from './TechnicianCalendar';
 
 export default function TechnicianDashboard() {
   const { user } = useUser();
@@ -27,6 +28,7 @@ export default function TechnicianDashboard() {
             <Route path="/" element={<TechnicianHome />} />
             <Route path="/tasks" element={<MyTasks />} />
             <Route path="/tasks/:id" element={<TaskDetail />} />
+            <Route path="/calendar" element={<TechnicianCalendar />} />
             <Route path="*" element={<Navigate to="/technician" replace />} />
           </Routes>
         </main>

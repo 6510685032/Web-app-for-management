@@ -16,7 +16,8 @@ import {
   ClipboardList,
   User,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  XCircle,
 } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
@@ -134,6 +135,7 @@ export default function TaskDetail() {
   const [notes, setNotes] = useState('');
   const [materialsUsed, setMaterialsUsed] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTaskDetail = async () => {
@@ -387,18 +389,26 @@ export default function TaskDetail() {
               <h3 className="text-xs font-black uppercase tracking-widest px-1" style={{ color: 'var(--djmp-text-muted)' }}>Initial Site Images</h3>
               {task.images && task.images.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
-                  {task.images.map((img, index) => (
-                    <div key={index} className="group relative overflow-hidden rounded-2xl border aspect-square" style={{ borderColor: 'var(--djmp-border)' }}>
-                      <img
-                        src={img.startsWith('http') ? img : `http://127.0.0.1:8000${img}`}
-                        alt={`Before ${index + 1}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                         <span className="text-white text-[10px] font-black uppercase tracking-widest border border-white/40 px-3 py-1 rounded-full backdrop-blur-sm">View Initial</span>
+                  {task.images.map((img, index) => {
+                    const src = img.startsWith('http') ? img : `http://127.0.0.1:8000${img}`;
+                    return (
+                      <div
+                        key={index}
+                        className="group relative overflow-hidden rounded-2xl border aspect-square cursor-pointer"
+                        style={{ borderColor: 'var(--djmp-border)' }}
+                        onClick={() => setPreviewImage(src)}
+                      >
+                        <img
+                          src={src}
+                          alt={`Before ${index + 1}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white text-[10px] font-black uppercase tracking-widest border border-white/40 px-3 py-1 rounded-full backdrop-blur-sm">View Full</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-10 rounded-2xl text-center border-2 border-dashed flex flex-col items-center gap-3" style={{ borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>
@@ -702,6 +712,27 @@ export default function TaskDetail() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Image Preview Lightbox */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
+            onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+          >
+            <XCircle className="w-10 h-10" />
+          </button>
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

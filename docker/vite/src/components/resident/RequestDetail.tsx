@@ -58,6 +58,9 @@ interface RequestDetailData {
   extension_requested_days?: number | null;
   extension_reason?: string;
   extension_requested_at?: string | null;
+  technician_notes?: string;
+  materials_used?: string;
+  approved_completion?: string;
 }
 
 export default function RequestDetail() {
@@ -68,6 +71,7 @@ export default function RequestDetail() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [extensionSubmitting, setExtensionSubmitting] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchRequestDetail = async () => {
@@ -280,6 +284,25 @@ export default function RequestDetail() {
               </p>
             </div>
 
+            {(request.status === 'completed' || request.approved_completion === 'pending_approval') && (
+              <div>
+                <h3 className="font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--djmp-text)' }}>
+                  <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                  Work Evidence
+                </h3>
+                <div className="p-4 rounded-lg border space-y-4" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <div>
+                    <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Technician Notes</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap" style={{ color: 'var(--djmp-text)' }}>{request.technician_notes || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Materials Used</p>
+                    <p className="text-sm font-medium whitespace-pre-wrap" style={{ color: 'var(--djmp-text)' }}>{request.materials_used || '-'}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--djmp-text)' }}>
                 <ImageIcon className="w-5 h-5" />
@@ -288,19 +311,19 @@ export default function RequestDetail() {
 
               {request.images && request.images.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
-                  {request.images.map((img, index) => (
-                    <img
-                      key={index}
-                      src={
-                        img.startsWith('http')
-                          ? img
-                          : `http://127.0.0.1:8000${img}`
-                      }
-                      alt={`Request image ${index + 1}`}
-                      className="w-full h-48 object-cover rounded-lg border"
-                      style={{ borderColor: 'var(--djmp-border)' }}
-                    />
-                  ))}
+                  {request.images.map((img, index) => {
+                    const imgSrc = img.startsWith('http') ? img : `http://127.0.0.1:8000${img}`;
+                    return (
+                      <div key={index} onClick={() => setPreviewImage(imgSrc)}>
+                        <img
+                          src={imgSrc}
+                          alt={`Request image ${index + 1}`}
+                          className="w-full h-48 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity"
+                          style={{ borderColor: 'var(--djmp-border)' }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)', color: 'var(--djmp-text-muted)' }}>
@@ -492,6 +515,27 @@ export default function RequestDetail() {
           </div>
         </div>
       </div>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 fade-in"
+          onClick={() => setPreviewImage(null)}
+        >
+          <button 
+            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors"
+            onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+          >
+            <XCircle className="w-10 h-10" />
+          </button>
+          <img 
+            src={previewImage} 
+            alt="Preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl scale-in"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Search, Filter, CheckCircle, X, UserCheck, Eye, Clock, AlertTriangle, Calendar } from 'lucide-react';
+import { ArrowLeft, Search, Filter, CheckCircle, X, UserCheck, Eye, Clock, AlertTriangle, Calendar, Send } from 'lucide-react';
 import StatusBadge from '../shared/StatusBadge';
 import api from '../../utils/api';
 
@@ -41,6 +41,7 @@ export default function RequestManagement() {
   const [newScheduledDate, setNewScheduledDate] = useState('');
   const [newScheduledTime, setNewScheduledTime] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -152,7 +153,7 @@ export default function RequestManagement() {
               { key: 'assigned', label: 'Assigned' },
               { key: 'in-progress', label: 'In Progress' },
               { key: 'completed', label: 'Completed' },
-              { key: 'pending_approval', label: 'รออนุมัติ' },
+              { key: 'pending_approval', label: 'Pending Approval' },
               { key: 'all', label: 'All' },
             ].map((tab) => (
               <button
@@ -332,6 +333,27 @@ export default function RequestManagement() {
                 <p className="text-sm" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.description}</p>
               </div>
 
+              {/* Resident Images — always visible */}
+              {selectedRequest.images && selectedRequest.images.length > 0 && (
+                <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                  <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--djmp-text-muted)' }}>
+                    📎 รูปที่ลูกบ้านแนบมา ({selectedRequest.images.length} รูป)
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {selectedRequest.images.map((img, idx) => (
+                      <div key={idx} onClick={() => setPreviewImage(img)}>
+                        <img
+                          src={img}
+                          alt={`Resident image ${idx + 1}`}
+                          className="w-full h-20 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
+                          style={{ borderColor: 'var(--djmp-border)' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {selectedRequest.approved_completion === 'pending_approval' || selectedRequest.status === 'completed' ? (
                 <div className="space-y-4">
                   <div className="p-4 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
@@ -339,26 +361,23 @@ export default function RequestManagement() {
                       <CheckCircle className="w-4 h-4 text-emerald-500" />
                       Work Evidence
                     </h4>
-                    
                     <div className="space-y-3">
                       <div>
                         <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Technician Notes</p>
                         <p className="text-sm font-medium whitespace-pre-wrap" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.technician_notes || '-'}</p>
                       </div>
-                      
                       <div>
                         <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Materials Used</p>
                         <p className="text-sm font-medium whitespace-pre-wrap" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.materials_used || '-'}</p>
                       </div>
-                      
                       {selectedRequest.images && selectedRequest.images.length > 0 && (
                         <div>
                           <p className="text-xs mb-2" style={{ color: 'var(--djmp-text-muted)' }}>Attached Images</p>
                           <div className="grid grid-cols-2 gap-2">
                             {selectedRequest.images.map((img, idx) => (
-                              <a href={img} target="_blank" rel="noopener noreferrer" key={idx}>
+                              <div key={idx} onClick={() => setPreviewImage(img)}>
                                 <img src={img} alt={`Evidence ${idx + 1}`} className="w-full h-24 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity" style={{ borderColor: 'var(--djmp-border)' }} />
-                              </a>
+                              </div>
                             ))}
                           </div>
                         </div>
@@ -366,7 +385,35 @@ export default function RequestManagement() {
                     </div>
                   </div>
                 </div>
+              ) : selectedRequest.status === 'pending' ? (
+                /* ── Pending: Read-only view (editing moved to Dispatch Tasks) ── */
+                <div className="space-y-3">
+                  <div className="p-3 rounded-lg border" style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.2)' }}>
+                    <p className="text-xs font-semibold" style={{ color: '#3b82f6' }}>💡 กำหนด Priority / Deadline / วันนัด ได้ที่หน้า Dispatch Tasks</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Priority</p>
+                      <p className="font-semibold capitalize" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.priority || '-'}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Deadline</p>
+                      <p className="font-semibold" style={{ color: 'var(--djmp-text)' }}>
+                        {selectedRequest.deadline ? new Date(selectedRequest.deadline).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not set'}
+                      </p>
+                    </div>
+                    <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Scheduled Date</p>
+                      <p className="font-semibold" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.scheduled_date || 'Not set'}</p>
+                    </div>
+                    <div className="p-3 rounded-lg border" style={{ background: 'var(--djmp-surface-2)', borderColor: 'var(--djmp-border)' }}>
+                      <p className="text-xs mb-1" style={{ color: 'var(--djmp-text-muted)' }}>Scheduled Time</p>
+                      <p className="font-semibold" style={{ color: 'var(--djmp-text)' }}>{selectedRequest.scheduled_time ? selectedRequest.scheduled_time.substring(0, 5) : 'Not set'}</p>
+                    </div>
+                  </div>
+                </div>
               ) : (
+                /* assigned / in-progress → edit form */
                 <>
                   {/* Priority Setting */}
                   <div>
@@ -377,15 +424,13 @@ export default function RequestManagement() {
                     <div className="grid grid-cols-3 gap-2">
                       {['low', 'medium', 'high'].map((p) => {
                         const isActive = newPriority === p;
-                        const pColor = p === 'high' ? 'rgba(239, 68, 68, 0.2)' : p === 'medium' ? 'rgba(234, 179, 8, 0.2)' : 'rgba(59, 130, 246, 0.2)';
                         const activeBg = p === 'high' ? 'rgba(239, 68, 68, 0.1)' : p === 'medium' ? 'rgba(234, 179, 8, 0.1)' : 'rgba(59, 130, 246, 0.1)';
                         const activeText = p === 'high' ? '#ef4444' : p === 'medium' ? '#eab308' : '#3b82f6';
-                        
                         return (
                           <button
                             key={p}
                             onClick={() => setNewPriority(p)}
-                            className={`px-3 py-2 rounded-lg border-2 transition-all capitalize font-medium text-sm`}
+                            className="px-3 py-2 rounded-lg border-2 transition-all capitalize font-medium text-sm"
                             style={{
                               background: isActive ? activeBg : 'var(--djmp-input-bg)',
                               borderColor: isActive ? activeText : 'var(--djmp-border)',
@@ -453,6 +498,7 @@ export default function RequestManagement() {
               )}
             </div>
 
+
             <div className="flex gap-3">
               {selectedRequest.approved_completion === 'pending_approval' ? (
                 <>
@@ -475,6 +521,25 @@ export default function RequestManagement() {
                     Reject
                   </button>
                 </>
+              ) : selectedRequest.status === 'pending' ? (
+                /* Pending → Go to Dispatch Tasks + Close */
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => { setShowDetailModal(false); navigate('/officer/dispatch'); }}
+                    className="flex-1 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:brightness-110 shadow-sm transition-all"
+                    style={{ background: 'var(--accent-gradient)' }}
+                  >
+                    <Send className="w-4 h-4" />
+                    Go to Dispatch Tasks
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-5 py-3 rounded-lg font-medium border hover:opacity-80 transition-all"
+                    style={{ background: 'var(--djmp-surface-2)', color: 'var(--djmp-text)', borderColor: 'var(--djmp-border)' }}
+                  >
+                    Close
+                  </button>
+                </div>
               ) : selectedRequest.status !== 'completed' && selectedRequest.status !== 'cancelled' ? (
                 <>
                   <button
@@ -519,10 +584,30 @@ export default function RequestManagement() {
                     Cancel
                   </button>
                 </>
+              ) : selectedRequest.status === 'pending' ? (
+                /* Pending: Go to Dispatch + Close */
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => { setShowDetailModal(false); navigate('/officer/dispatch', { state: { selectRequestId: selectedRequest.id } }); }}
+                    className="flex-1 text-white py-3 rounded-lg font-medium flex items-center justify-center gap-2 hover:brightness-110 shadow-sm transition-all"
+                    style={{ background: 'var(--accent-gradient)' }}
+                  >
+                    <Send className="w-4 h-4" />
+                    Go to Dispatch Tasks
+                  </button>
+                  <button
+                    onClick={() => setShowDetailModal(false)}
+                    className="px-5 py-3 rounded-lg font-medium border hover:opacity-80 transition-all"
+                    style={{ background: 'var(--djmp-surface-2)', color: 'var(--djmp-text)', borderColor: 'var(--djmp-border)' }}
+                  >
+                    Close
+                  </button>
+                </div>
               ) : (
+                /* completed/cancelled: close only */
                 <button
                   onClick={() => setShowDetailModal(false)}
-                  className="w-full px-6 py-3 rounded-lg transition-colors font-medium border hover:opacity-80"
+                  className="w-full px-6 py-3 rounded-lg font-medium border hover:opacity-80 transition-all"
                   style={{ background: 'var(--djmp-surface-2)', color: 'var(--djmp-text)', borderColor: 'var(--djmp-border)' }}
                 >
                   Close
@@ -530,6 +615,27 @@ export default function RequestManagement() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 bg-black/90 z-[60] flex items-center justify-center p-4 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img 
+            src={previewImage} 
+            alt="Preview" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
+          />
+          <button 
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-full transition-all"
+            onClick={() => setPreviewImage(null)}
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
       )}
     </div>
