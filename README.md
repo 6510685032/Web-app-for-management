@@ -83,6 +83,10 @@ graph LR;
 https://www.figma.com/make/ALZpJWmh848ZJIfZphgQqT/Digital-Juristic-Management-Platform?t=4sxls27P4c0Q1bjT-1&preview-route=%2Fadmin
 https://www.canva.com/design/DAG__orYFu0/5d0K-xwc_atXGvw_mtNrHA/edit
 
+# 9. วันที่พรีเซ้น
+ครั้งที่ 1: 2 ก.พ. 2569
+ครั้งที่ 2: 20 เม.ย. 2569
+
 ## Deployment Guide
 Make sure you are inside the docker directory:
 ```
