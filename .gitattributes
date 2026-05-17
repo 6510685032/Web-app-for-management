@@ -1,0 +1,8 @@
+# Force LF line endings for shell scripts and Dockerfiles
+# Prevents Windows CRLF from breaking Linux containers (n8n entrypoint bug)
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.dockerfile text eol=lf
+
+# Normalize text files (auto-detect, but ensure consistent in repo)
+* text=auto
