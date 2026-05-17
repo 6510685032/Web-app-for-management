@@ -22,6 +22,7 @@ rm -rf ./postgresql/database
 docker compose build
 ...
 ```
+** You will have to execute workflow to populate test users manually using n8n WebUI site (listed below), enter the default credentials given inside docker/n8n/README.md and then proceed to execute workflow there.
 
 Default ports:
 ```
