@@ -29,4 +29,6 @@ http://localhost:8000/ (django rest)
 http://localhost:5678/ (n8n)
 http://localhost:5173/ (vite)
 http://localhost:5432/ (postgres)
+http://localhost:9000/ (minio S3 API)
+http://localhost:9001/ (minio console - login: minioadmin/minioadmin)
 ```
