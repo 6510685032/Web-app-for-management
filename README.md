@@ -1,6 +1,12 @@
-Inside docker directory:
+## Deployment Guide
+Make sure you are inside the docker directory:
 ```
-docker compose build (first time only)
+cd docker
+```
+
+Build images and run the containers:
+```
+docker compose build
 docker compose up
 ```
 
@@ -14,7 +20,7 @@ docker compose down -v
 ```
 Incase if you want to build the images again, do run this:
 ```
-rm -rf ./docker/postgresql/database
+rm -rf ./postgresql/database
 
 (then proceeds to run the docker build again as normal)
 docker compose build
