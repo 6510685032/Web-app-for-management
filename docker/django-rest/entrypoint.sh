@@ -20,5 +20,18 @@ python manage.py migrate
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
+echo "Creating default superuser..."
+python -c "
+import django, os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+django.setup()
+from django.contrib.auth.models import User
+if not User.objects.filter(username='admin').exists():
+    User.objects.create_superuser('admin', 'admin@admin.com', 'admin')
+    print('  Superuser created: admin / admin')
+else:
+    print('  Superuser already exists')
+"
+
 echo "Starting server..."
 exec python manage.py runserver 0.0.0.0:8000
