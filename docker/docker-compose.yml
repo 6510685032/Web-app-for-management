@@ -7,7 +7,6 @@ services:
       - project-bridge
     image: postgres:16
     volumes:
-      - ./postgresql/database:/var/lib/postgresql/data
       - ./postgresql/init-n8n-db.sql:/docker-entrypoint-initdb.d/init-n8n-db.sql
     ports:
       - "5432:5432"

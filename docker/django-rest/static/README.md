@@ -1,0 +1,1 @@
+static files & tailwindCSS collected

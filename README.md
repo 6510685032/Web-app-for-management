@@ -14,14 +14,6 @@ To stop the containers:
 docker compose down (if you want to remove the volumes, then do run: docker compose down -v)
 ```
 
-Incase if you want to build the images again, do run this:
-```
-rm -rf ./postgresql/database
-
-(then proceeds to run the docker build again as normal)
-docker compose build
-...
-```
 ** You will have to execute workflow to populate test users manually using n8n WebUI site (listed below), enter the default credentials given inside docker/n8n/README.md and then proceed to execute workflow there.
 
 Default ports:
